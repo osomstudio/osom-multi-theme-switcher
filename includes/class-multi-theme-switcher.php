@@ -25,7 +25,7 @@ class Multi_Theme_Switcher {
 	 *
 	 * @var string
 	 */
-	const VERSION = '1.0.0';
+	const VERSION = '1.0.1';
 
 	/**
 	 * Single instance of the class.

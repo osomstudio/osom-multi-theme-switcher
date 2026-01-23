@@ -3,7 +3,7 @@
  * Plugin Name:       Multi Theme Switcher
  * Plugin URI:        https://github.com/osomstudio/multi-theme-switcher
  * Description:       Allows you to use different themes for specific pages, posts, or URLs while keeping a main theme active.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 5.0
  * Requires PHP:      7.0
  * Author:            OsomStudio, bartnovak, tomzielinski, Gudis24, rainkom
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define plugin constants.
 if ( ! defined( 'MTS_VERSION' ) ) {
-	define( 'MTS_VERSION', '1.0.0' );
+	define( 'MTS_VERSION', '1.0.1' );
 }
 
 if ( ! defined( 'MTS_PLUGIN_DIR' ) ) {
