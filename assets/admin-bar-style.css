@@ -1,0 +1,60 @@
+/* Multi Theme Switcher - Admin Bar Styles */
+
+#wpadminbar #wp-admin-bar-mts-admin-theme-switcher .ab-icon {
+    font-size: 16px;
+    margin-top: 2px;
+}
+
+#wpadminbar #wp-admin-bar-mts-admin-theme-switcher .ab-label {
+    margin-left: 5px;
+}
+
+#wpadminbar .mts-admin-bar-menu > .ab-item {
+    cursor: pointer;
+}
+
+#wpadminbar .mts-theme-option .ab-item {
+    cursor: pointer;
+    position: relative;
+    padding-left: 30px;
+}
+
+#wpadminbar .mts-current-theme .ab-item {
+    background-color: rgba(240, 245, 250, 0.1);
+    font-weight: 600;
+}
+
+#wpadminbar .mts-current-indicator {
+    position: absolute;
+    left: 10px;
+    color: #00a32a;
+    font-weight: bold;
+}
+
+#wpadminbar .mts-theme-option .ab-item em {
+    font-style: italic;
+    opacity: 0.7;
+    font-size: 0.9em;
+}
+
+/* Loading state */
+#wpadminbar .mts-theme-option.mts-loading .ab-item {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Hover effects */
+#wpadminbar .mts-theme-option:hover .ab-item {
+    background-color: rgba(240, 245, 250, 0.15);
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 782px) {
+    #wpadminbar #wp-admin-bar-mts-admin-theme-switcher .ab-label {
+        display: none;
+    }
+
+    #wpadminbar #wp-admin-bar-mts-admin-theme-switcher .ab-icon {
+        font-size: 20px;
+    }
+}
