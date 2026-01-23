@@ -11,7 +11,6 @@
  * License:           GPL v2 or later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       multi-theme-switcher
- * Domain Path:       /languages
  *
  * @package Multi_Theme_Switcher
  */
@@ -37,20 +36,6 @@ if ( ! defined( 'MTS_PLUGIN_URL' ) ) {
 if ( ! defined( 'MTS_PLUGIN_FILE' ) ) {
 	define( 'MTS_PLUGIN_FILE', __FILE__ );
 }
-
-/**
- * Load plugin text domain for translations.
- *
- * @since 1.0.0
- */
-function mts_load_textdomain() {
-	load_plugin_textdomain(
-		'multi-theme-switcher',
-		false,
-		dirname( plugin_basename( __FILE__ ) ) . '/languages'
-	);
-}
-add_action( 'plugins_loaded', 'mts_load_textdomain' );
 
 /**
  * Initialize the plugin.
