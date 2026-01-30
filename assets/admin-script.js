@@ -2,170 +2,170 @@ jQuery(document).ready(function($) {
     'use strict';
 
     // Handle rule type change
-    $('#mts-rule-type').on('change', function() {
+    $('#omts-rule-type').on('change', function() {
         const ruleType = $(this).val();
 
         // Hide all rule-specific rows
-        $('.mts-rule-row').hide();
+        $('.omts-rule-row').hide();
 
         // Show the appropriate row based on rule type
         switch(ruleType) {
             case 'page':
-                $('#mts-page-row').show();
+                $('#omts-page-row').show();
                 break;
             case 'post':
-                $('#mts-post-row').show();
+                $('#omts-post-row').show();
                 break;
             case 'post_type':
-                $('#mts-post-type-row').show();
+                $('#omts-post-type-row').show();
                 break;
             case 'draft_page':
-                $('#mts-draft-page-row').show();
+                $('#omts-draft-page-row').show();
                 break;
             case 'draft_post':
-                $('#mts-draft-post-row').show();
+                $('#omts-draft-post-row').show();
                 break;
             case 'pending_page':
-                $('#mts-pending-page-row').show();
+                $('#omts-pending-page-row').show();
                 break;
             case 'pending_post':
-                $('#mts-pending-post-row').show();
+                $('#omts-pending-post-row').show();
                 break;
             case 'private_page':
-                $('#mts-private-page-row').show();
+                $('#omts-private-page-row').show();
                 break;
             case 'private_post':
-                $('#mts-private-post-row').show();
+                $('#omts-private-post-row').show();
                 break;
             case 'future_page':
-                $('#mts-future-page-row').show();
+                $('#omts-future-page-row').show();
                 break;
             case 'future_post':
-                $('#mts-future-post-row').show();
+                $('#omts-future-post-row').show();
                 break;
             case 'url':
-                $('#mts-url-row').show();
+                $('#omts-url-row').show();
                 break;
             case 'category':
-                $('#mts-category-row').show();
+                $('#omts-category-row').show();
                 break;
             case 'tag':
-                $('#mts-tag-row').show();
+                $('#omts-tag-row').show();
                 break;
         }
     });
 
     // Handle form submission
-    $('#mts-add-rule-form').on('submit', function(e) {
+    $('#omts-add-rule-form').on('submit', function(e) {
         e.preventDefault();
 
         const form = $(this);
         const submitButton = form.find('button[type="submit"]');
-        const ruleType = $('#mts-rule-type').val();
+        const ruleType = $('#omts-rule-type').val();
 
         // Collect form data based on rule type
         const formData = {
-            action: 'mts_save_rules',
-            nonce: mtsAjax.nonce,
+            action: 'omts_save_rules',
+            nonce: omtsAjax.nonce,
             rule_type: ruleType,
-            theme: $('#mts-theme-select').val()
+            theme: $('#omts-theme-select').val()
         };
 
         // Add type-specific data
         switch(ruleType) {
             case 'page':
-                formData.page_id = $('#mts-page-select').val();
+                formData.page_id = $('#omts-page-select').val();
                 if (!formData.page_id) {
                     alert('Please select a page');
                     return;
                 }
                 break;
             case 'post':
-                formData.post_id = $('#mts-post-select').val();
+                formData.post_id = $('#omts-post-select').val();
                 if (!formData.post_id) {
                     alert('Please select a post');
                     return;
                 }
                 break;
             case 'post_type':
-                formData.post_type = $('#mts-post-type-select').val();
+                formData.post_type = $('#omts-post-type-select').val();
                 if (!formData.post_type) {
                     alert('Please select a post type');
                     return;
                 }
                 break;
             case 'draft_page':
-                formData.page_id = $('#mts-draft-page-select').val();
+                formData.page_id = $('#omts-draft-page-select').val();
                 if (!formData.page_id) {
                     alert('Please select a draft page');
                     return;
                 }
                 break;
             case 'draft_post':
-                formData.post_id = $('#mts-draft-post-select').val();
+                formData.post_id = $('#omts-draft-post-select').val();
                 if (!formData.post_id) {
                     alert('Please select a draft post');
                     return;
                 }
                 break;
             case 'pending_page':
-                formData.page_id = $('#mts-pending-page-select').val();
+                formData.page_id = $('#omts-pending-page-select').val();
                 if (!formData.page_id) {
                     alert('Please select a pending page');
                     return;
                 }
                 break;
             case 'pending_post':
-                formData.post_id = $('#mts-pending-post-select').val();
+                formData.post_id = $('#omts-pending-post-select').val();
                 if (!formData.post_id) {
                     alert('Please select a pending post');
                     return;
                 }
                 break;
             case 'private_page':
-                formData.page_id = $('#mts-private-page-select').val();
+                formData.page_id = $('#omts-private-page-select').val();
                 if (!formData.page_id) {
                     alert('Please select a private page');
                     return;
                 }
                 break;
             case 'private_post':
-                formData.post_id = $('#mts-private-post-select').val();
+                formData.post_id = $('#omts-private-post-select').val();
                 if (!formData.post_id) {
                     alert('Please select a private post');
                     return;
                 }
                 break;
             case 'future_page':
-                formData.page_id = $('#mts-future-page-select').val();
+                formData.page_id = $('#omts-future-page-select').val();
                 if (!formData.page_id) {
                     alert('Please select a scheduled page');
                     return;
                 }
                 break;
             case 'future_post':
-                formData.post_id = $('#mts-future-post-select').val();
+                formData.post_id = $('#omts-future-post-select').val();
                 if (!formData.post_id) {
                     alert('Please select a scheduled post');
                     return;
                 }
                 break;
             case 'url':
-                formData.custom_url = $('#mts-url-input').val();
+                formData.custom_url = $('#omts-url-input').val();
                 if (!formData.custom_url) {
                     alert('Please enter a URL or slug');
                     return;
                 }
                 break;
             case 'category':
-                formData.category_id = $('#mts-category-select').val();
+                formData.category_id = $('#omts-category-select').val();
                 if (!formData.category_id) {
                     alert('Please select a category');
                     return;
                 }
                 break;
             case 'tag':
-                formData.tag_id = $('#mts-tag-select').val();
+                formData.tag_id = $('#omts-tag-select').val();
                 if (!formData.tag_id) {
                     alert('Please select a tag');
                     return;
@@ -183,13 +183,13 @@ jQuery(document).ready(function($) {
 
         // Send AJAX request
         $.ajax({
-            url: mtsAjax.ajaxurl,
+            url: omtsAjax.ajaxurl,
             type: 'POST',
             data: formData,
             success: function(response) {
                 if (response.success) {
                     // Remove "no rules" message if it exists
-                    $('.mts-no-rules').remove();
+                    $('.omts-no-rules').remove();
 
                     // Add new row to table
                     const newRow = `
@@ -198,18 +198,18 @@ jQuery(document).ready(function($) {
                             <td>${escapeHtml(response.data.target_display)}</td>
                             <td>${escapeHtml(response.data.theme_name)}</td>
                             <td>
-                                <button class="button mts-delete-rule" data-index="${response.data.index}">Delete</button>
+                                <button class="button omts-delete-rule" data-index="${response.data.index}">Delete</button>
                             </td>
                         </tr>
                     `;
-                    $('#mts-rules-tbody').append(newRow);
+                    $('#omts-rules-tbody').append(newRow);
 
                     // Reset form
                     form[0].reset();
-                    $('#mts-rule-type').trigger('change');
+                    $('#omts-rule-type').trigger('change');
 
                     // Show success message
-                    const successMsg = $('<span class="mts-success-message">Rule added successfully!</span>');
+                    const successMsg = $('<span class="omts-success-message">Rule added successfully!</span>');
                     submitButton.after(successMsg);
                     setTimeout(function() {
                         successMsg.remove();
@@ -228,7 +228,7 @@ jQuery(document).ready(function($) {
     });
 
     // Handle delete button click
-    $(document).on('click', '.mts-delete-rule', function() {
+    $(document).on('click', '.omts-delete-rule', function() {
         if (!confirm('Are you sure you want to delete this rule?')) {
             return;
         }
@@ -240,11 +240,11 @@ jQuery(document).ready(function($) {
         button.prop('disabled', true).text('Deleting...');
 
         $.ajax({
-            url: mtsAjax.ajaxurl,
+            url: omtsAjax.ajaxurl,
             type: 'POST',
             data: {
-                action: 'mts_delete_rule',
-                nonce: mtsAjax.nonce,
+                action: 'omts_delete_rule',
+                nonce: omtsAjax.nonce,
                 index: index
             },
             success: function(response) {
@@ -253,14 +253,14 @@ jQuery(document).ready(function($) {
                         $(this).remove();
 
                         // Update indices for remaining rows
-                        $('#mts-rules-tbody tr').each(function(newIndex) {
+                        $('#omts-rules-tbody tr').each(function(newIndex) {
                             $(this).attr('data-index', newIndex);
-                            $(this).find('.mts-delete-rule').attr('data-index', newIndex);
+                            $(this).find('.omts-delete-rule').attr('data-index', newIndex);
                         });
 
                         // Show "no rules" message if table is empty
-                        if ($('#mts-rules-tbody tr').length === 0) {
-                            $('#mts-rules-tbody').html('<tr class="mts-no-rules"><td colspan="4">No rules configured yet. Add your first rule above.</td></tr>');
+                        if ($('#omts-rules-tbody tr').length === 0) {
+                            $('#omts-rules-tbody').html('<tr class="omts-no-rules"><td colspan="4">No rules configured yet. Add your first rule above.</td></tr>');
                         }
                     });
                 } else {
@@ -276,13 +276,13 @@ jQuery(document).ready(function($) {
     });
 
     // Handle REST prefix form submission
-    $('#mts-add-prefix-form').on('submit', function(e) {
+    $('#omts-add-prefix-form').on('submit', function(e) {
         e.preventDefault();
 
         const form = $(this);
         const submitButton = form.find('button[type="submit"]');
-        const theme = $('#mts-prefix-theme-select').val();
-        const prefix = $('#mts-rest-prefix-input').val().trim();
+        const theme = $('#omts-prefix-theme-select').val();
+        const prefix = $('#omts-rest-prefix-input').val().trim();
 
         if (!theme) {
             alert('Please select a theme');
@@ -294,11 +294,11 @@ jQuery(document).ready(function($) {
 
         // Send AJAX request
         $.ajax({
-            url: mtsAjax.ajaxurl,
+            url: omtsAjax.ajaxurl,
             type: 'POST',
             data: {
-                action: 'mts_save_rest_prefix',
-                nonce: mtsAjax.nonce,
+                action: 'omts_save_rest_prefix',
+                nonce: omtsAjax.nonce,
                 theme: theme,
                 prefix: prefix
             },
@@ -312,7 +312,7 @@ jQuery(document).ready(function($) {
                     form[0].reset();
 
                     // Show success message
-                    const successMsg = $('<span class="mts-success-message">REST prefix configured successfully!</span>');
+                    const successMsg = $('<span class="omts-success-message">REST prefix configured successfully!</span>');
                     submitButton.after(successMsg);
                     setTimeout(function() {
                         successMsg.remove();
@@ -334,11 +334,11 @@ jQuery(document).ready(function($) {
 
     // Function to rebuild prefix table
     function rebuildPrefixTable(prefixes) {
-        const tbody = $('#mts-prefixes-tbody');
+        const tbody = $('#omts-prefixes-tbody');
         tbody.empty();
 
         if (!prefixes || prefixes.length === 0) {
-            tbody.html('<tr class="mts-no-prefixes"><td colspan="4">No custom REST prefixes configured. All themes use the default wp-json prefix.</td></tr>');
+            tbody.html('<tr class="omts-no-prefixes"><td colspan="4">No custom REST prefixes configured. All themes use the default wp-json prefix.</td></tr>');
             return;
         }
 
@@ -347,7 +347,7 @@ jQuery(document).ready(function($) {
             const exampleUrl = window.location.origin + '/' + displayPrefix + '/namespace/endpoint';
 
             // Get theme name from the select option
-            const themeName = $('#mts-prefix-theme-select option[value="' + mapping.theme + '"]').text() || mapping.theme;
+            const themeName = $('#omts-prefix-theme-select option[value="' + mapping.theme + '"]').text() || mapping.theme;
 
             const row = `
                 <tr data-index="${index}">
@@ -355,7 +355,7 @@ jQuery(document).ready(function($) {
                     <td><code>${escapeHtml(displayPrefix)}</code></td>
                     <td><code>${escapeHtml(exampleUrl)}</code></td>
                     <td>
-                        <button class="button mts-delete-prefix" data-index="${index}">Delete</button>
+                        <button class="button omts-delete-prefix" data-index="${index}">Delete</button>
                     </td>
                 </tr>
             `;
@@ -364,7 +364,7 @@ jQuery(document).ready(function($) {
     }
 
     // Handle delete prefix button click
-    $(document).on('click', '.mts-delete-prefix', function() {
+    $(document).on('click', '.omts-delete-prefix', function() {
         if (!confirm('Are you sure you want to delete this REST prefix mapping? The theme will revert to using the default wp-json prefix.')) {
             return;
         }
@@ -376,11 +376,11 @@ jQuery(document).ready(function($) {
         button.prop('disabled', true).text('Deleting...');
 
         $.ajax({
-            url: mtsAjax.ajaxurl,
+            url: omtsAjax.ajaxurl,
             type: 'POST',
             data: {
-                action: 'mts_delete_rest_prefix',
-                nonce: mtsAjax.nonce,
+                action: 'omts_delete_rest_prefix',
+                nonce: omtsAjax.nonce,
                 index: index
             },
             success: function(response) {
@@ -389,14 +389,14 @@ jQuery(document).ready(function($) {
                         $(this).remove();
 
                         // Update indices for remaining rows
-                        $('#mts-prefixes-tbody tr').each(function(newIndex) {
+                        $('#omts-prefixes-tbody tr').each(function(newIndex) {
                             $(this).attr('data-index', newIndex);
-                            $(this).find('.mts-delete-prefix').attr('data-index', newIndex);
+                            $(this).find('.omts-delete-prefix').attr('data-index', newIndex);
                         });
 
                         // Show "no prefixes" message if table is empty
-                        if ($('#mts-prefixes-tbody tr').length === 0) {
-                            $('#mts-prefixes-tbody').html('<tr class="mts-no-prefixes"><td colspan="4">No custom REST prefixes configured. All themes use the default wp-json prefix.</td></tr>');
+                        if ($('#omts-prefixes-tbody tr').length === 0) {
+                            $('#omts-prefixes-tbody').html('<tr class="omts-no-prefixes"><td colspan="4">No custom REST prefixes configured. All themes use the default wp-json prefix.</td></tr>');
                         }
                     });
                 } else {

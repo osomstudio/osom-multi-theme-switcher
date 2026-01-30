@@ -4,7 +4,7 @@
  *
  * Handles all AJAX requests for the plugin.
  *
- * @package Multi_Theme_Switcher
+ * @package Osom_Multi_Theme_Switcher
  * @since   1.0.0
  */
 
@@ -14,23 +14,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class MTS_Ajax_Handler
+ * Class OMTS_Ajax_Handler
  *
  * @since 1.0.0
  */
-class MTS_Ajax_Handler {
+class OMTS_Ajax_Handler {
 
 	/**
 	 * Theme switcher instance.
 	 *
-	 * @var MTS_Theme_Switcher
+	 * @var OMTS_Theme_Switcher
 	 */
 	private $theme_switcher;
 
 	/**
 	 * Admin page instance.
 	 *
-	 * @var MTS_Admin_Page
+	 * @var OMTS_Admin_Page
 	 */
 	private $admin_page;
 
@@ -39,18 +39,18 @@ class MTS_Ajax_Handler {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param MTS_Theme_Switcher $theme_switcher Theme switcher instance.
-	 * @param MTS_Admin_Page     $admin_page     Admin page instance.
+	 * @param OMTS_Theme_Switcher $theme_switcher Theme switcher instance.
+	 * @param OMTS_Admin_Page     $admin_page     Admin page instance.
 	 */
 	public function __construct( $theme_switcher, $admin_page ) {
 		$this->theme_switcher = $theme_switcher;
 		$this->admin_page     = $admin_page;
 
-		add_action( 'wp_ajax_mts_save_rules', array( $this, 'ajax_save_rules' ) );
-		add_action( 'wp_ajax_mts_delete_rule', array( $this, 'ajax_delete_rule' ) );
-		add_action( 'wp_ajax_mts_switch_admin_theme', array( $this, 'ajax_switch_admin_theme' ) );
-		add_action( 'wp_ajax_mts_save_rest_prefix', array( $this, 'ajax_save_rest_prefix' ) );
-		add_action( 'wp_ajax_mts_delete_rest_prefix', array( $this, 'ajax_delete_rest_prefix' ) );
+		add_action( 'wp_ajax_omts_save_rules', array( $this, 'ajax_save_rules' ) );
+		add_action( 'wp_ajax_omts_delete_rule', array( $this, 'ajax_delete_rule' ) );
+		add_action( 'wp_ajax_omts_switch_admin_theme', array( $this, 'ajax_switch_admin_theme' ) );
+		add_action( 'wp_ajax_omts_save_rest_prefix', array( $this, 'ajax_save_rest_prefix' ) );
+		add_action( 'wp_ajax_omts_delete_rest_prefix', array( $this, 'ajax_delete_rest_prefix' ) );
 	}
 
 	/**
@@ -59,17 +59,17 @@ class MTS_Ajax_Handler {
 	 * @since 1.0.0
 	 */
 	public function ajax_save_rules() {
-		check_ajax_referer( 'mts_nonce', 'nonce' );
+		check_ajax_referer( 'omts_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Insufficient permissions', 'multi-theme-switcher' ) );
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
 		}
 
 		$rule_type = isset( $_POST['rule_type'] ) ? sanitize_text_field( wp_unslash( $_POST['rule_type'] ) ) : '';
 		$theme     = isset( $_POST['theme'] ) ? sanitize_text_field( wp_unslash( $_POST['theme'] ) ) : '';
 
 		if ( empty( $theme ) ) {
-			wp_send_json_error( __( 'Please select a theme', 'multi-theme-switcher' ) );
+			wp_send_json_error( __( 'Please select a theme', 'osom-multi-theme-switcher' ) );
 		}
 
 		$rule = array(
@@ -124,7 +124,7 @@ class MTS_Ajax_Handler {
 		}
 
 		if ( empty( $rule['value'] ) ) {
-			wp_send_json_error( __( 'Please select or enter a valid value', 'multi-theme-switcher' ) );
+			wp_send_json_error( __( 'Please select or enter a valid value', 'osom-multi-theme-switcher' ) );
 		}
 
 		// Add rule to existing rules.
@@ -149,10 +149,10 @@ class MTS_Ajax_Handler {
 	 * @since 1.0.0
 	 */
 	public function ajax_delete_rule() {
-		check_ajax_referer( 'mts_nonce', 'nonce' );
+		check_ajax_referer( 'omts_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Insufficient permissions', 'multi-theme-switcher' ) );
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
 		}
 
 		$index = isset( $_POST['index'] ) ? intval( $_POST['index'] ) : -1;
@@ -163,7 +163,7 @@ class MTS_Ajax_Handler {
 			$this->theme_switcher->save_rules( $rules );
 			wp_send_json_success();
 		} else {
-			wp_send_json_error( __( 'Rule not found', 'multi-theme-switcher' ) );
+			wp_send_json_error( __( 'Rule not found', 'osom-multi-theme-switcher' ) );
 		}
 	}
 
@@ -173,10 +173,10 @@ class MTS_Ajax_Handler {
 	 * @since 1.0.0
 	 */
 	public function ajax_switch_admin_theme() {
-		check_ajax_referer( 'mts_admin_theme_nonce', 'nonce' );
+		check_ajax_referer( 'omts_admin_theme_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Insufficient permissions', 'multi-theme-switcher' ) );
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
 		}
 
 		$theme = isset( $_POST['theme'] ) ? sanitize_text_field( wp_unslash( $_POST['theme'] ) ) : '';
@@ -185,7 +185,7 @@ class MTS_Ajax_Handler {
 		if ( ! empty( $theme ) ) {
 			$theme_obj = wp_get_theme( $theme );
 			if ( ! $theme_obj->exists() ) {
-				wp_send_json_error( __( 'Theme does not exist', 'multi-theme-switcher' ) );
+				wp_send_json_error( __( 'Theme does not exist', 'osom-multi-theme-switcher' ) );
 			}
 		}
 
@@ -213,7 +213,7 @@ class MTS_Ajax_Handler {
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -221,7 +221,7 @@ class MTS_Ajax_Handler {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -234,17 +234,17 @@ class MTS_Ajax_Handler {
 
 			case 'category':
 				$category = get_category( $rule['value'] );
-				return $category ? $category->name : __( 'Unknown Category', 'multi-theme-switcher' );
+				return $category ? $category->name : __( 'Unknown Category', 'osom-multi-theme-switcher' );
 
 			case 'tag':
 				$tag = get_tag( $rule['value'] );
-				return $tag ? $tag->name : __( 'Unknown Tag', 'multi-theme-switcher' );
+				return $tag ? $tag->name : __( 'Unknown Tag', 'osom-multi-theme-switcher' );
 
 			case 'draft_page':
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title . ' (Draft)' : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Draft Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Draft Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -252,7 +252,7 @@ class MTS_Ajax_Handler {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title . ' (Draft)' : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Draft Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Draft Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -260,7 +260,7 @@ class MTS_Ajax_Handler {
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title . ' (Pending)' : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Pending Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Pending Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -268,7 +268,7 @@ class MTS_Ajax_Handler {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title . ' (Pending)' : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Pending Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Pending Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -276,7 +276,7 @@ class MTS_Ajax_Handler {
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title . ' (Private)' : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Private Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Private Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -284,7 +284,7 @@ class MTS_Ajax_Handler {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title . ' (Private)' : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Private Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Private Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -292,7 +292,7 @@ class MTS_Ajax_Handler {
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title . ' (Scheduled)' : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Scheduled Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Scheduled Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -300,7 +300,7 @@ class MTS_Ajax_Handler {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title . ' (Scheduled)' : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Scheduled Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Scheduled Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -316,23 +316,23 @@ class MTS_Ajax_Handler {
 	 */
 	public function ajax_save_rest_prefix() {
 		try {
-			check_ajax_referer( 'mts_nonce', 'nonce' );
+			check_ajax_referer( 'omts_nonce', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( __( 'Insufficient permissions', 'multi-theme-switcher' ) );
+				wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
 			}
 
 			$theme  = isset( $_POST['theme'] ) ? sanitize_text_field( wp_unslash( $_POST['theme'] ) ) : '';
 			$prefix = isset( $_POST['prefix'] ) ? sanitize_text_field( wp_unslash( $_POST['prefix'] ) ) : '';
 
 			if ( empty( $theme ) ) {
-				wp_send_json_error( __( 'Please select a theme', 'multi-theme-switcher' ) );
+				wp_send_json_error( __( 'Please select a theme', 'osom-multi-theme-switcher' ) );
 			}
 
 			// Validate theme exists.
 			$theme_obj = wp_get_theme( $theme );
 			if ( ! $theme_obj->exists() ) {
-				wp_send_json_error( __( 'Theme does not exist', 'multi-theme-switcher' ) );
+				wp_send_json_error( __( 'Theme does not exist', 'osom-multi-theme-switcher' ) );
 			}
 
 			// Sanitize prefix - remove slashes and special characters.
@@ -382,8 +382,8 @@ class MTS_Ajax_Handler {
 				)
 			);
 		} catch ( Exception $e ) {
-			error_log( 'MTS REST Prefix Save Error: ' . $e->getMessage() );
-			wp_send_json_error( __( 'An error occurred: ', 'multi-theme-switcher' ) . $e->getMessage() );
+			error_log( 'OMTS REST Prefix Save Error: ' . $e->getMessage() );
+			wp_send_json_error( __( 'An error occurred: ', 'osom-multi-theme-switcher' ) . $e->getMessage() );
 		}
 	}
 
@@ -393,10 +393,10 @@ class MTS_Ajax_Handler {
 	 * @since 1.0.1
 	 */
 	public function ajax_delete_rest_prefix() {
-		check_ajax_referer( 'mts_nonce', 'nonce' );
+		check_ajax_referer( 'omts_nonce', 'nonce' );
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Insufficient permissions', 'multi-theme-switcher' ) );
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
 		}
 
 		$index    = isset( $_POST['index'] ) ? intval( $_POST['index'] ) : -1;
@@ -411,7 +411,7 @@ class MTS_Ajax_Handler {
 
 			wp_send_json_success();
 		} else {
-			wp_send_json_error( __( 'REST prefix mapping not found', 'multi-theme-switcher' ) );
+			wp_send_json_error( __( 'REST prefix mapping not found', 'osom-multi-theme-switcher' ) );
 		}
 	}
 }

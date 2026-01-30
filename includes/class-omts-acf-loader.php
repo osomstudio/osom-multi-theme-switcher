@@ -4,7 +4,7 @@
  *
  * Handles loading ACF JSON files from multiple themes.
  *
- * @package Multi_Theme_Switcher
+ * @package Osom_Multi_Theme_Switcher
  * @since   1.0.1
  */
 
@@ -14,11 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class MTS_ACF_Loader
+ * Class OMTS_ACF_Loader
  *
  * @since 1.0.1
  */
-class MTS_ACF_Loader {
+class OMTS_ACF_Loader {
 
 	/**
 	 * Constructor.
@@ -48,17 +48,17 @@ class MTS_ACF_Loader {
 	public function add_acf_json_load_points( $paths ) {
 		// Get all themes
 		$themes = wp_get_themes();
-		
+
 		foreach ( $themes as $theme_slug => $theme ) {
 			// Build path using theme's stylesheet directory
 			$acf_json_path = $theme->get_stylesheet_directory() . '/acf-json';
-			
+
 			// Only add path if acf-json directory exists and is not already in paths
 			if ( is_dir( $acf_json_path ) && ! in_array( $acf_json_path, $paths, true ) ) {
 				$paths[] = $acf_json_path;
 			}
 		}
-		
+
 		return $paths;
 	}
 }

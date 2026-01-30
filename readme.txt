@@ -1,4 +1,4 @@
-=== Multi Theme Switcher ===
+=== Osom Multi Theme Switcher ===
 Contributors: osomstudio, bartosznowak, tomziel, kamiljanq, rainkom
 Tags: theme switcher, multiple themes, theme per page, conditional themes
 Requires at least: 5.0
@@ -12,7 +12,7 @@ Use different themes for specific pages, posts, or URLs while keeping your main 
 
 == Description ==
 
-Multi Theme Switcher allows WordPress administrators to apply different themes to specific pages, posts, post types, categories, tags, or custom URLs without changing the main active theme.
+Osom Multi Theme Switcher allows WordPress administrators to apply different themes to specific pages, posts, post types, categories, tags, or custom URLs without changing the main active theme.
 
 **Perfect for:**
 
@@ -46,7 +46,7 @@ The plugin hooks into WordPress early in the loading process to ensure the corre
 
 == Installation ==
 
-1. Upload the `multi-theme-switcher` folder to the `/wp-content/plugins/` directory
+1. Upload the `osom-multi-theme-switcher` folder to the `/wp-content/plugins/` directory
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to Appearance > Theme Switcher to configure your theme rules
 
@@ -108,4 +108,4 @@ While not designed specifically for A/B testing, you can apply different themes 
 == Upgrade Notice ==
 
 = 1.0.0 =
-Initial release of Multi Theme Switcher.
+Initial release of Osom Multi Theme Switcher.

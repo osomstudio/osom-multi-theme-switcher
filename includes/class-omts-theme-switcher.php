@@ -4,7 +4,7 @@
  *
  * Handles theme switching logic for both frontend and admin.
  *
- * @package Multi_Theme_Switcher
+ * @package Osom_Multi_Theme_Switcher
  * @since   1.0.0
  */
 
@@ -14,25 +14,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class MTS_Theme_Switcher
+ * Class OMTS_Theme_Switcher
  *
  * @since 1.0.0
  */
-class MTS_Theme_Switcher {
+class OMTS_Theme_Switcher {
 
 	/**
 	 * Option name for storing theme rules.
 	 *
 	 * @var string
 	 */
-	private $option_name = 'mts_theme_rules';
+	private $option_name = 'omts_theme_rules';
 
 	/**
 	 * Option name for storing theme REST prefix mappings.
 	 *
 	 * @var string
 	 */
-	private $rest_prefix_option_name = 'mts_theme_rest_prefixes';
+	private $rest_prefix_option_name = 'omts_theme_rest_prefixes';
 
 	/**
 	 * Flag to prevent recursion in filter_rest_url_prefix.
@@ -352,7 +352,7 @@ class MTS_Theme_Switcher {
 	 * @return string Theme slug or empty string.
 	 */
 	public function get_admin_theme_preference() {
-		return get_user_meta( get_current_user_id(), 'mts_admin_theme', true );
+		return get_user_meta( get_current_user_id(), 'omts_admin_theme', true );
 	}
 
 	/**
@@ -364,9 +364,9 @@ class MTS_Theme_Switcher {
 	 */
 	public function set_admin_theme_preference( $theme ) {
 		if ( empty( $theme ) ) {
-			delete_user_meta( get_current_user_id(), 'mts_admin_theme' );
+			delete_user_meta( get_current_user_id(), 'omts_admin_theme' );
 		} else {
-			update_user_meta( get_current_user_id(), 'mts_admin_theme', $theme );
+			update_user_meta( get_current_user_id(), 'omts_admin_theme', $theme );
 		}
 	}
 
@@ -590,7 +590,7 @@ class MTS_Theme_Switcher {
 			return $prefix;
 		} catch ( Exception $e ) {
 			$this->filtering_rest_prefix = false;
-			error_log( 'MTS filter_rest_url_prefix error: ' . $e->getMessage() );
+			error_log( 'OMTS filter_rest_url_prefix error: ' . $e->getMessage() );
 			return $prefix;
 		}
 	}
@@ -1163,7 +1163,7 @@ class MTS_Theme_Switcher {
 	 */
 	private function match_preview_post_against_rules( $rules ) {
 		$post_id = isset( $_GET['page_id'] ) ? absint( $_GET['page_id'] ) : absint( $_GET['p'] );
-		
+
 		if ( ! $post_id ) {
 			return false;
 		}
@@ -1201,7 +1201,7 @@ class MTS_Theme_Switcher {
 	 */
 	private function match_page_preview_against_rules( $post, $rules, $wpdb ) {
 		$post_path = $post->post_name;
-		
+
 		if ( $post->post_parent ) {
 			$parent_path = $this->get_page_full_path( $post->post_parent, $wpdb );
 			// If parent path cannot be resolved, bail out to avoid partial matches
@@ -1210,20 +1210,20 @@ class MTS_Theme_Switcher {
 			}
 			$post_path = $parent_path . '/' . $post_path;
 		}
-		
+
 		$post_path_normalized = trim( $post_path, '/' );
-		
+
 		foreach ( $rules as $rule ) {
 			if ( 'url' === $rule['type'] ) {
 				$rule_url = trim( $rule['value'], '/' );
-				
+
 				// Check for exact full path match only (no segment fallback for pages)
 				if ( $post_path_normalized === $rule_url ) {
 					return $rule['theme'];
 				}
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -1239,24 +1239,24 @@ class MTS_Theme_Switcher {
 	private function match_post_preview_against_rules( $post, $rules ) {
 		$post_path = $post->post_name;
 		$post_path_normalized = trim( $post_path, '/' );
-		
+
 		foreach ( $rules as $rule ) {
 			if ( 'url' === $rule['type'] ) {
 				$rule_url = trim( $rule['value'], '/' );
 				$rule_url_segments = explode( '/', $rule_url );
-				
+
 				// Check for exact full path match
 				if ( $post_path_normalized === $rule_url ) {
 					return $rule['theme'];
 				}
-				
+
 				// Check if post path appears in rule's segments
 				if ( in_array( $post_path_normalized, $rule_url_segments, true ) ) {
 					return $rule['theme'];
 				}
 			}
 		}
-		
+
 		return false;
 	}
 }

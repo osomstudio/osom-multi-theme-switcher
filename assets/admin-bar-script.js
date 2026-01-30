@@ -1,14 +1,14 @@
 // Global function for theme switching (dashboard only)
-function mtsAdminBarSwitchTheme(themeSlug, nonce) {
+function omtsAdminBarSwitchTheme(themeSlug, nonce) {
     // Use the global ajaxurl if available, otherwise use the localized one
-    var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : (typeof mtsAdminBar !== 'undefined' ? mtsAdminBar.ajaxurl : '/wp-admin/admin-ajax.php');
+    var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : (typeof omtsAdminBar !== 'undefined' ? omtsAdminBar.ajaxurl : '/wp-admin/admin-ajax.php');
 
     // Send AJAX request
     jQuery.ajax({
         url: ajaxUrl,
         type: 'POST',
         data: {
-            action: 'mts_switch_admin_theme',
+            action: 'omts_switch_admin_theme',
             nonce: nonce,
             theme: themeSlug
         },
@@ -30,7 +30,7 @@ jQuery(document).ready(function($) {
     'use strict';
 
     // Prevent parent menu click from doing anything
-    $(document).on('click', '#wp-admin-bar-mts-admin-theme-switcher > .ab-item', function(e) {
+    $(document).on('click', '#wp-admin-bar-omts-admin-theme-switcher > .ab-item', function(e) {
         e.preventDefault();
     });
 });

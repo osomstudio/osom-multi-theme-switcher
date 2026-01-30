@@ -4,7 +4,7 @@
  *
  * Handles the admin settings page for managing theme rules.
  *
- * @package Multi_Theme_Switcher
+ * @package Osom_Multi_Theme_Switcher
  * @since   1.0.0
  */
 
@@ -14,16 +14,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class MTS_Admin_Page
+ * Class OMTS_Admin_Page
  *
  * @since 1.0.0
  */
-class MTS_Admin_Page {
+class OMTS_Admin_Page {
 
 	/**
 	 * Theme switcher instance.
 	 *
-	 * @var MTS_Theme_Switcher
+	 * @var OMTS_Theme_Switcher
 	 */
 	private $theme_switcher;
 
@@ -32,7 +32,7 @@ class MTS_Admin_Page {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param MTS_Theme_Switcher $theme_switcher Theme switcher instance.
+	 * @param OMTS_Theme_Switcher $theme_switcher Theme switcher instance.
 	 */
 	public function __construct( $theme_switcher ) {
 		$this->theme_switcher = $theme_switcher;
@@ -48,10 +48,10 @@ class MTS_Admin_Page {
 	 */
 	public function add_admin_menu() {
 		add_theme_page(
-			__( 'Multi Theme Switcher', 'multi-theme-switcher' ),
-			__( 'Theme Switcher', 'multi-theme-switcher' ),
+			__( 'Osom Multi Theme Switcher', 'osom-multi-theme-switcher' ),
+			__( 'Theme Switcher', 'osom-multi-theme-switcher' ),
 			'manage_options',
-			'multi-theme-switcher',
+			'osom-multi-theme-switcher',
 			array( $this, 'render_admin_page' )
 		);
 	}
@@ -64,19 +64,19 @@ class MTS_Admin_Page {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_admin_scripts( $hook ) {
-		if ( 'appearance_page_multi-theme-switcher' !== $hook ) {
+		if ( 'appearance_page_osom-multi-theme-switcher' !== $hook ) {
 			return;
 		}
 
 		wp_enqueue_style(
-			'mts-admin-css',
+			'omts-admin-css',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-style.css',
 			array(),
 			'1.0.0'
 		);
 
 		wp_enqueue_script(
-			'mts-admin-js',
+			'omts-admin-js',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-script.js',
 			array( 'jquery' ),
 			'1.0.0',
@@ -84,11 +84,11 @@ class MTS_Admin_Page {
 		);
 
 		wp_localize_script(
-			'mts-admin-js',
-			'mtsAjax',
+			'omts-admin-js',
+			'omtsAjax',
 			array(
 				'ajaxurl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'mts_nonce' ),
+				'nonce'   => wp_create_nonce( 'omts_nonce' ),
 			)
 		);
 	}
@@ -104,43 +104,43 @@ class MTS_Admin_Page {
 		$themes         = wp_get_themes();
 		$current_theme  = wp_get_theme()->get_stylesheet();
 		?>
-		<div class="wrap mts-admin-wrap">
-			<h1><?php esc_html_e( 'Multi Theme Switcher', 'multi-theme-switcher' ); ?></h1>
+		<div class="wrap omts-admin-wrap">
+			<h1><?php esc_html_e( 'Osom Multi Theme Switcher', 'osom-multi-theme-switcher' ); ?></h1>
 			<p>
 				<?php
 				printf(
 					/* translators: %s: Current theme name */
-					esc_html__( 'Configure which pages, posts, or URLs use alternative themes. Your main theme is: %s', 'multi-theme-switcher' ),
+					esc_html__( 'Configure which pages, posts, or URLs use alternative themes. Your main theme is: %s', 'osom-multi-theme-switcher' ),
 					'<strong>' . esc_html( wp_get_theme()->get( 'Name' ) ) . '</strong>'
 				);
 				?>
 			</p>
 
-			<div class="mts-container">
-				<div class="mts-add-rule-section">
-					<h2><?php esc_html_e( 'Add New Theme Rule', 'multi-theme-switcher' ); ?></h2>
-					<form id="mts-add-rule-form">
+			<div class="omts-container">
+				<div class="omts-add-rule-section">
+					<h2><?php esc_html_e( 'Add New Theme Rule', 'osom-multi-theme-switcher' ); ?></h2>
+					<form id="omts-add-rule-form">
 						<table class="form-table">
 							<tr>
 								<th scope="row">
-									<label for="mts-rule-type"><?php esc_html_e( 'Rule Type', 'multi-theme-switcher' ); ?></label>
+									<label for="omts-rule-type"><?php esc_html_e( 'Rule Type', 'osom-multi-theme-switcher' ); ?></label>
 								</th>
 								<td>
-									<select id="mts-rule-type" name="rule_type">
-										<option value="page"><?php esc_html_e( 'Page', 'multi-theme-switcher' ); ?></option>
-										<option value="post"><?php esc_html_e( 'Post', 'multi-theme-switcher' ); ?></option>
-										<option value="post_type"><?php esc_html_e( 'Post Type', 'multi-theme-switcher' ); ?></option>
-										<option value="draft_page"><?php esc_html_e( 'Draft Page', 'multi-theme-switcher' ); ?></option>
-										<option value="draft_post"><?php esc_html_e( 'Draft Post', 'multi-theme-switcher' ); ?></option>
-										<option value="pending_page"><?php esc_html_e( 'Pending Page', 'multi-theme-switcher' ); ?></option>
-										<option value="pending_post"><?php esc_html_e( 'Pending Post', 'multi-theme-switcher' ); ?></option>
-										<option value="private_page"><?php esc_html_e( 'Private Page', 'multi-theme-switcher' ); ?></option>
-										<option value="private_post"><?php esc_html_e( 'Private Post', 'multi-theme-switcher' ); ?></option>
-										<option value="future_page"><?php esc_html_e( 'Scheduled Page', 'multi-theme-switcher' ); ?></option>
-										<option value="future_post"><?php esc_html_e( 'Scheduled Post', 'multi-theme-switcher' ); ?></option>
-										<option value="url"><?php esc_html_e( 'Custom URL/Slug', 'multi-theme-switcher' ); ?></option>
-										<option value="category"><?php esc_html_e( 'Category', 'multi-theme-switcher' ); ?></option>
-										<option value="tag"><?php esc_html_e( 'Tag', 'multi-theme-switcher' ); ?></option>
+									<select id="omts-rule-type" name="rule_type">
+										<option value="page"><?php esc_html_e( 'Page', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="post"><?php esc_html_e( 'Post', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="post_type"><?php esc_html_e( 'Post Type', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="draft_page"><?php esc_html_e( 'Draft Page', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="draft_post"><?php esc_html_e( 'Draft Post', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="pending_page"><?php esc_html_e( 'Pending Page', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="pending_post"><?php esc_html_e( 'Pending Post', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="private_page"><?php esc_html_e( 'Private Page', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="private_post"><?php esc_html_e( 'Private Post', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="future_page"><?php esc_html_e( 'Scheduled Page', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="future_post"><?php esc_html_e( 'Scheduled Post', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="url"><?php esc_html_e( 'Custom URL/Slug', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="category"><?php esc_html_e( 'Category', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="tag"><?php esc_html_e( 'Tag', 'osom-multi-theme-switcher' ); ?></option>
 									</select>
 								</td>
 							</tr>
@@ -160,11 +160,11 @@ class MTS_Admin_Page {
 							<?php $this->render_tag_row(); ?>
 							<tr>
 								<th scope="row">
-									<label for="mts-theme-select"><?php esc_html_e( 'Alternative Theme', 'multi-theme-switcher' ); ?></label>
+									<label for="omts-theme-select"><?php esc_html_e( 'Alternative Theme', 'osom-multi-theme-switcher' ); ?></label>
 								</th>
 								<td>
-									<select id="mts-theme-select" name="theme">
-										<option value=""><?php esc_html_e( '-- Select Theme --', 'multi-theme-switcher' ); ?></option>
+									<select id="omts-theme-select" name="theme">
+										<option value=""><?php esc_html_e( '-- Select Theme --', 'osom-multi-theme-switcher' ); ?></option>
 										<?php foreach ( $themes as $theme_slug => $theme_obj ) : ?>
 											<option value="<?php echo esc_attr( $theme_slug ); ?>">
 												<?php echo esc_html( $theme_obj->get( 'Name' ) ); ?>
@@ -176,28 +176,28 @@ class MTS_Admin_Page {
 						</table>
 						<p class="submit">
 							<button type="submit" class="button button-primary">
-								<?php esc_html_e( 'Add Rule', 'multi-theme-switcher' ); ?>
+								<?php esc_html_e( 'Add Rule', 'osom-multi-theme-switcher' ); ?>
 							</button>
 						</p>
 					</form>
 				</div>
 
-				<div class="mts-rules-list-section">
-					<h2><?php esc_html_e( 'Active Theme Rules', 'multi-theme-switcher' ); ?></h2>
+				<div class="omts-rules-list-section">
+					<h2><?php esc_html_e( 'Active Theme Rules', 'osom-multi-theme-switcher' ); ?></h2>
 					<table class="wp-list-table widefat fixed striped">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Type', 'multi-theme-switcher' ); ?></th>
-								<th><?php esc_html_e( 'Target', 'multi-theme-switcher' ); ?></th>
-								<th><?php esc_html_e( 'Theme', 'multi-theme-switcher' ); ?></th>
-								<th><?php esc_html_e( 'Actions', 'multi-theme-switcher' ); ?></th>
+								<th><?php esc_html_e( 'Type', 'osom-multi-theme-switcher' ); ?></th>
+								<th><?php esc_html_e( 'Target', 'osom-multi-theme-switcher' ); ?></th>
+								<th><?php esc_html_e( 'Theme', 'osom-multi-theme-switcher' ); ?></th>
+								<th><?php esc_html_e( 'Actions', 'osom-multi-theme-switcher' ); ?></th>
 							</tr>
 						</thead>
-						<tbody id="mts-rules-tbody">
+						<tbody id="omts-rules-tbody">
 							<?php if ( empty( $rules ) ) : ?>
-								<tr class="mts-no-rules">
+								<tr class="omts-no-rules">
 									<td colspan="4">
-										<?php esc_html_e( 'No rules configured yet. Add your first rule above.', 'multi-theme-switcher' ); ?>
+										<?php esc_html_e( 'No rules configured yet. Add your first rule above.', 'osom-multi-theme-switcher' ); ?>
 									</td>
 								</tr>
 							<?php else : ?>
@@ -207,8 +207,8 @@ class MTS_Admin_Page {
 										<td><?php echo esc_html( $this->get_rule_target_display( $rule ) ); ?></td>
 										<td><?php echo esc_html( $this->theme_switcher->get_theme_name( $rule['theme'] ) ); ?></td>
 										<td>
-											<button class="button mts-delete-rule" data-index="<?php echo esc_attr( $index ); ?>">
-												<?php esc_html_e( 'Delete', 'multi-theme-switcher' ); ?>
+											<button class="button omts-delete-rule" data-index="<?php echo esc_attr( $index ); ?>">
+												<?php esc_html_e( 'Delete', 'osom-multi-theme-switcher' ); ?>
 											</button>
 										</td>
 									</tr>
@@ -219,23 +219,23 @@ class MTS_Admin_Page {
 				</div>
 
 				<!-- Theme REST Prefix Configuration Section -->
-				<div class="mts-rest-prefix-section">
-					<h2><?php esc_html_e( 'Theme REST API Prefixes', 'multi-theme-switcher' ); ?></h2>
+				<div class="omts-rest-prefix-section">
+					<h2><?php esc_html_e( 'Theme REST API Prefixes', 'osom-multi-theme-switcher' ); ?></h2>
 					<p class="description">
-						<?php esc_html_e( 'Assign custom REST API URL prefixes to themes. This allows different themes to have their own REST endpoints (e.g., /wp-json/ vs /wp-json-2/). Useful when themes have conflicting REST API routes.', 'multi-theme-switcher' ); ?>
+						<?php esc_html_e( 'Assign custom REST API URL prefixes to themes. This allows different themes to have their own REST endpoints (e.g., /wp-json/ vs /wp-json-2/). Useful when themes have conflicting REST API routes.', 'osom-multi-theme-switcher' ); ?>
 					</p>
 
-					<div class="mts-add-prefix-section">
-						<h3><?php esc_html_e( 'Configure Theme REST Prefix', 'multi-theme-switcher' ); ?></h3>
-						<form id="mts-add-prefix-form">
+					<div class="omts-add-prefix-section">
+						<h3><?php esc_html_e( 'Configure Theme REST Prefix', 'osom-multi-theme-switcher' ); ?></h3>
+						<form id="omts-add-prefix-form">
 							<table class="form-table">
 								<tr>
 									<th scope="row">
-										<label for="mts-prefix-theme-select"><?php esc_html_e( 'Theme', 'multi-theme-switcher' ); ?></label>
+										<label for="omts-prefix-theme-select"><?php esc_html_e( 'Theme', 'osom-multi-theme-switcher' ); ?></label>
 									</th>
 									<td>
-										<select id="mts-prefix-theme-select" name="prefix_theme">
-											<option value=""><?php esc_html_e( '-- Select Theme --', 'multi-theme-switcher' ); ?></option>
+										<select id="omts-prefix-theme-select" name="prefix_theme">
+											<option value=""><?php esc_html_e( '-- Select Theme --', 'osom-multi-theme-switcher' ); ?></option>
 											<?php foreach ( $themes as $theme_slug => $theme_obj ) : ?>
 												<option value="<?php echo esc_attr( $theme_slug ); ?>">
 													<?php echo esc_html( $theme_obj->get( 'Name' ) ); ?>
@@ -246,15 +246,15 @@ class MTS_Admin_Page {
 								</tr>
 								<tr>
 									<th scope="row">
-										<label for="mts-rest-prefix-input"><?php esc_html_e( 'REST API Prefix', 'multi-theme-switcher' ); ?></label>
+										<label for="omts-rest-prefix-input"><?php esc_html_e( 'REST API Prefix', 'osom-multi-theme-switcher' ); ?></label>
 									</th>
 									<td>
-										<input type="text" id="mts-rest-prefix-input" name="rest_prefix" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., wp-json-2', 'multi-theme-switcher' ); ?>">
+										<input type="text" id="omts-rest-prefix-input" name="rest_prefix" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., wp-json-2', 'osom-multi-theme-switcher' ); ?>">
 										<p class="description">
 											<?php
 											printf(
 												/* translators: 1: Default prefix example, 2: Custom prefix example */
-												esc_html__( 'Enter a custom prefix without slashes. Leave empty to use default (%1$s). Example: %2$s becomes %3$s', 'multi-theme-switcher' ),
+												esc_html__( 'Enter a custom prefix without slashes. Leave empty to use default (%1$s). Example: %2$s becomes %3$s', 'osom-multi-theme-switcher' ),
 												'<code>wp-json</code>',
 												'<code>wp-json-2</code>',
 												'<code>/wp-json-2/namespace/endpoint</code>'
@@ -266,28 +266,28 @@ class MTS_Admin_Page {
 							</table>
 							<p class="submit">
 								<button type="submit" class="button button-primary">
-									<?php esc_html_e( 'Set REST Prefix', 'multi-theme-switcher' ); ?>
+									<?php esc_html_e( 'Set REST Prefix', 'osom-multi-theme-switcher' ); ?>
 								</button>
 							</p>
 						</form>
 					</div>
 
-					<div class="mts-prefixes-list">
-						<h3><?php esc_html_e( 'Active REST Prefix Mappings', 'multi-theme-switcher' ); ?></h3>
+					<div class="omts-prefixes-list">
+						<h3><?php esc_html_e( 'Active REST Prefix Mappings', 'osom-multi-theme-switcher' ); ?></h3>
 						<table class="wp-list-table widefat fixed striped">
 							<thead>
 								<tr>
-									<th><?php esc_html_e( 'Theme', 'multi-theme-switcher' ); ?></th>
-									<th><?php esc_html_e( 'REST Prefix', 'multi-theme-switcher' ); ?></th>
-									<th><?php esc_html_e( 'Example URL', 'multi-theme-switcher' ); ?></th>
-									<th><?php esc_html_e( 'Actions', 'multi-theme-switcher' ); ?></th>
+									<th><?php esc_html_e( 'Theme', 'osom-multi-theme-switcher' ); ?></th>
+									<th><?php esc_html_e( 'REST Prefix', 'osom-multi-theme-switcher' ); ?></th>
+									<th><?php esc_html_e( 'Example URL', 'osom-multi-theme-switcher' ); ?></th>
+									<th><?php esc_html_e( 'Actions', 'osom-multi-theme-switcher' ); ?></th>
 								</tr>
 							</thead>
-							<tbody id="mts-prefixes-tbody">
+							<tbody id="omts-prefixes-tbody">
 								<?php if ( empty( $rest_prefixes ) ) : ?>
-									<tr class="mts-no-prefixes">
+									<tr class="omts-no-prefixes">
 										<td colspan="4">
-											<?php esc_html_e( 'No custom REST prefixes configured. All themes use the default wp-json prefix.', 'multi-theme-switcher' ); ?>
+											<?php esc_html_e( 'No custom REST prefixes configured. All themes use the default wp-json prefix.', 'osom-multi-theme-switcher' ); ?>
 										</td>
 									</tr>
 								<?php else : ?>
@@ -299,8 +299,8 @@ class MTS_Admin_Page {
 												<code><?php echo esc_html( home_url( '/' . ( ! empty( $prefix_map['prefix'] ) ? $prefix_map['prefix'] : 'wp-json' ) . '/namespace/endpoint' ) ); ?></code>
 											</td>
 											<td>
-												<button class="button mts-delete-prefix" data-index="<?php echo esc_attr( $index ); ?>">
-													<?php esc_html_e( 'Delete', 'multi-theme-switcher' ); ?>
+												<button class="button omts-delete-prefix" data-index="<?php echo esc_attr( $index ); ?>">
+													<?php esc_html_e( 'Delete', 'osom-multi-theme-switcher' ); ?>
 												</button>
 											</td>
 										</tr>
@@ -322,13 +322,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_page_row() {
 		?>
-		<tr id="mts-page-row" class="mts-rule-row">
+		<tr id="omts-page-row" class="omts-rule-row">
 			<th scope="row">
-				<label for="mts-page-select"><?php esc_html_e( 'Select Page', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-page-select"><?php esc_html_e( 'Select Page', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Page --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-page-select" name="page_id">
+					<option value=""><?php esc_html_e( '-- Select Page --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$pages = get_pages();
 					foreach ( $pages as $page ) {
@@ -352,13 +352,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_post_row() {
 		?>
-		<tr id="mts-post-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-post-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-post-select"><?php esc_html_e( 'Select Post', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-post-select"><?php esc_html_e( 'Select Post', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Post --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-post-select" name="post_id">
+					<option value=""><?php esc_html_e( '-- Select Post --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$posts = get_posts( array( 'numberposts' => -1 ) );
 					foreach ( $posts as $post ) {
@@ -382,13 +382,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_post_type_row() {
 		?>
-		<tr id="mts-post-type-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-post-type-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-post-type-select"><?php esc_html_e( 'Select Post Type', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-post-type-select"><?php esc_html_e( 'Select Post Type', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-post-type-select" name="post_type">
-					<option value=""><?php esc_html_e( '-- Select Post Type --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-post-type-select" name="post_type">
+					<option value=""><?php esc_html_e( '-- Select Post Type --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$post_types = get_post_types( array( 'public' => true ), 'objects' );
 					foreach ( $post_types as $post_type ) {
@@ -412,14 +412,14 @@ class MTS_Admin_Page {
 	 */
 	private function render_url_row() {
 		?>
-		<tr id="mts-url-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-url-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-url-input"><?php esc_html_e( 'Custom URL/Slug', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-url-input"><?php esc_html_e( 'Custom URL/Slug', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<input type="text" id="mts-url-input" name="custom_url" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., /about-us or about-us', 'multi-theme-switcher' ); ?>">
+				<input type="text" id="omts-url-input" name="custom_url" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., /about-us or about-us', 'osom-multi-theme-switcher' ); ?>">
 				<p class="description">
-					<?php esc_html_e( 'Enter a URL path or slug (with or without leading slash)', 'multi-theme-switcher' ); ?>
+					<?php esc_html_e( 'Enter a URL path or slug (with or without leading slash)', 'osom-multi-theme-switcher' ); ?>
 				</p>
 			</td>
 		</tr>
@@ -433,13 +433,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_category_row() {
 		?>
-		<tr id="mts-category-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-category-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-category-select"><?php esc_html_e( 'Select Category', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-category-select"><?php esc_html_e( 'Select Category', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-category-select" name="category_id">
-					<option value=""><?php esc_html_e( '-- Select Category --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-category-select" name="category_id">
+					<option value=""><?php esc_html_e( '-- Select Category --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$categories = get_categories( array( 'hide_empty' => false ) );
 					foreach ( $categories as $category ) {
@@ -463,13 +463,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_tag_row() {
 		?>
-		<tr id="mts-tag-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-tag-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-tag-select"><?php esc_html_e( 'Select Tag', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-tag-select"><?php esc_html_e( 'Select Tag', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-tag-select" name="tag_id">
-					<option value=""><?php esc_html_e( '-- Select Tag --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-tag-select" name="tag_id">
+					<option value=""><?php esc_html_e( '-- Select Tag --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$tags = get_tags( array( 'hide_empty' => false ) );
 					foreach ( $tags as $tag ) {
@@ -493,13 +493,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_draft_page_row() {
 		?>
-		<tr id="mts-draft-page-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-draft-page-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-draft-page-select"><?php esc_html_e( 'Select Draft Page', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-draft-page-select"><?php esc_html_e( 'Select Draft Page', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-draft-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Draft Page --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-draft-page-select" name="page_id">
+					<option value=""><?php esc_html_e( '-- Select Draft Page --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$pages = get_pages( array( 'post_status' => 'draft' ) );
 					foreach ( $pages as $page ) {
@@ -523,13 +523,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_draft_post_row() {
 		?>
-		<tr id="mts-draft-post-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-draft-post-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-draft-post-select"><?php esc_html_e( 'Select Draft Post', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-draft-post-select"><?php esc_html_e( 'Select Draft Post', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-draft-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Draft Post --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-draft-post-select" name="post_id">
+					<option value=""><?php esc_html_e( '-- Select Draft Post --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$posts = get_posts( array( 'numberposts' => -1, 'post_status' => 'draft' ) );
 					foreach ( $posts as $post ) {
@@ -553,13 +553,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_pending_page_row() {
 		?>
-		<tr id="mts-pending-page-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-pending-page-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-pending-page-select"><?php esc_html_e( 'Select Pending Page', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-pending-page-select"><?php esc_html_e( 'Select Pending Page', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-pending-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Pending Page --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-pending-page-select" name="page_id">
+					<option value=""><?php esc_html_e( '-- Select Pending Page --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$pages = get_pages( array( 'post_status' => 'pending' ) );
 					foreach ( $pages as $page ) {
@@ -583,13 +583,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_pending_post_row() {
 		?>
-		<tr id="mts-pending-post-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-pending-post-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-pending-post-select"><?php esc_html_e( 'Select Pending Post', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-pending-post-select"><?php esc_html_e( 'Select Pending Post', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-pending-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Pending Post --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-pending-post-select" name="post_id">
+					<option value=""><?php esc_html_e( '-- Select Pending Post --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$posts = get_posts( array( 'numberposts' => -1, 'post_status' => 'pending' ) );
 					foreach ( $posts as $post ) {
@@ -613,13 +613,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_private_page_row() {
 		?>
-		<tr id="mts-private-page-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-private-page-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-private-page-select"><?php esc_html_e( 'Select Private Page', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-private-page-select"><?php esc_html_e( 'Select Private Page', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-private-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Private Page --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-private-page-select" name="page_id">
+					<option value=""><?php esc_html_e( '-- Select Private Page --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$pages = get_pages( array( 'post_status' => 'private' ) );
 					foreach ( $pages as $page ) {
@@ -643,13 +643,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_private_post_row() {
 		?>
-		<tr id="mts-private-post-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-private-post-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-private-post-select"><?php esc_html_e( 'Select Private Post', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-private-post-select"><?php esc_html_e( 'Select Private Post', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-private-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Private Post --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-private-post-select" name="post_id">
+					<option value=""><?php esc_html_e( '-- Select Private Post --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$posts = get_posts( array( 'numberposts' => -1, 'post_status' => 'private' ) );
 					foreach ( $posts as $post ) {
@@ -673,13 +673,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_future_page_row() {
 		?>
-		<tr id="mts-future-page-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-future-page-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-future-page-select"><?php esc_html_e( 'Select Scheduled Page', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-future-page-select"><?php esc_html_e( 'Select Scheduled Page', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-future-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Scheduled Page --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-future-page-select" name="page_id">
+					<option value=""><?php esc_html_e( '-- Select Scheduled Page --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$pages = get_pages( array( 'post_status' => 'future' ) );
 					foreach ( $pages as $page ) {
@@ -703,13 +703,13 @@ class MTS_Admin_Page {
 	 */
 	private function render_future_post_row() {
 		?>
-		<tr id="mts-future-post-row" class="mts-rule-row" style="display:none;">
+		<tr id="omts-future-post-row" class="omts-rule-row" style="display:none;">
 			<th scope="row">
-				<label for="mts-future-post-select"><?php esc_html_e( 'Select Scheduled Post', 'multi-theme-switcher' ); ?></label>
+				<label for="omts-future-post-select"><?php esc_html_e( 'Select Scheduled Post', 'osom-multi-theme-switcher' ); ?></label>
 			</th>
 			<td>
-				<select id="mts-future-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Scheduled Post --', 'multi-theme-switcher' ); ?></option>
+				<select id="omts-future-post-select" name="post_id">
+					<option value=""><?php esc_html_e( '-- Select Scheduled Post --', 'osom-multi-theme-switcher' ); ?></option>
 					<?php
 					$posts = get_posts( array( 'numberposts' => -1, 'post_status' => 'future' ) );
 					foreach ( $posts as $post ) {
@@ -740,7 +740,7 @@ class MTS_Admin_Page {
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -748,7 +748,7 @@ class MTS_Admin_Page {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -761,17 +761,17 @@ class MTS_Admin_Page {
 
 			case 'category':
 				$category = get_category( $rule['value'] );
-				return $category ? $category->name : __( 'Unknown Category', 'multi-theme-switcher' );
+				return $category ? $category->name : __( 'Unknown Category', 'osom-multi-theme-switcher' );
 
 			case 'tag':
 				$tag = get_tag( $rule['value'] );
-				return $tag ? $tag->name : __( 'Unknown Tag', 'multi-theme-switcher' );
+				return $tag ? $tag->name : __( 'Unknown Tag', 'osom-multi-theme-switcher' );
 
 			case 'draft_page':
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title . ' (Draft)' : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Draft Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Draft Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -779,7 +779,7 @@ class MTS_Admin_Page {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title . ' (Draft)' : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Draft Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Draft Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -787,7 +787,7 @@ class MTS_Admin_Page {
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title . ' (Pending)' : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Pending Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Pending Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -795,7 +795,7 @@ class MTS_Admin_Page {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title . ' (Pending)' : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Pending Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Pending Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -803,7 +803,7 @@ class MTS_Admin_Page {
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title . ' (Private)' : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Private Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Private Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -811,7 +811,7 @@ class MTS_Admin_Page {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title . ' (Private)' : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Private Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Private Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -819,7 +819,7 @@ class MTS_Admin_Page {
 				$page = get_post( $rule['value'] );
 				return $page ? $page->post_title . ' (Scheduled)' : sprintf(
 					/* translators: %d: Page ID */
-					__( 'Unknown Scheduled Page (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Scheduled Page (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -827,7 +827,7 @@ class MTS_Admin_Page {
 				$post = get_post( $rule['value'] );
 				return $post ? $post->post_title . ' (Scheduled)' : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Scheduled Post (ID: %d)', 'multi-theme-switcher' ),
+					__( 'Unknown Scheduled Post (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 

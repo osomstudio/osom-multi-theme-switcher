@@ -1,4 +1,4 @@
-# Multi Theme Switcher
+# Osom Multi Theme Switcher
 
 A WordPress plugin that allows you to use different themes for specific pages, posts, or URLs while keeping your main theme active site-wide.
 
@@ -21,7 +21,7 @@ A WordPress plugin that allows you to use different themes for specific pages, p
 
 ## Installation
 
-1. Upload the `multi-theme-switcher` folder to `/wp-content/plugins/`
+1. Upload the `osom-multi-theme-switcher` folder to `/wp-content/plugins/`
 2. Activate the plugin through the 'Plugins' menu in WordPress
 3. Go to Appearance > Theme Switcher to configure your rules
 

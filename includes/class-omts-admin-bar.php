@@ -4,7 +4,7 @@
  *
  * Handles the admin bar theme switcher menu.
  *
- * @package Multi_Theme_Switcher
+ * @package Osom_Multi_Theme_Switcher
  * @since   1.0.0
  */
 
@@ -14,16 +14,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class MTS_Admin_Bar
+ * Class OMTS_Admin_Bar
  *
  * @since 1.0.0
  */
-class MTS_Admin_Bar {
+class OMTS_Admin_Bar {
 
 	/**
 	 * Theme switcher instance.
 	 *
-	 * @var MTS_Theme_Switcher
+	 * @var OMTS_Theme_Switcher
 	 */
 	private $theme_switcher;
 
@@ -32,7 +32,7 @@ class MTS_Admin_Bar {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param MTS_Theme_Switcher $theme_switcher Theme switcher instance.
+	 * @param OMTS_Theme_Switcher $theme_switcher Theme switcher instance.
 	 */
 	public function __construct( $theme_switcher ) {
 		$this->theme_switcher = $theme_switcher;
@@ -67,11 +67,11 @@ class MTS_Admin_Bar {
 		// Add parent menu.
 		$wp_admin_bar->add_node(
 			array(
-				'id'    => 'mts-admin-theme-switcher',
-				'title' => '<span class="ab-icon dashicons dashicons-admin-appearance"></span><span class="ab-label">' . esc_html__( 'Dashboard theme: ', 'multi-theme-switcher' ) . esc_html( $active_theme_name ) . '</span>',
+				'id'    => 'omts-admin-theme-switcher',
+				'title' => '<span class="ab-icon dashicons dashicons-admin-appearance"></span><span class="ab-label">' . esc_html__( 'Dashboard theme: ', 'osom-multi-theme-switcher' ) . esc_html( $active_theme_name ) . '</span>',
 				'href'  => '#',
 				'meta'  => array(
-					'class' => 'mts-admin-bar-menu',
+					'class' => 'omts-admin-bar-menu',
 				),
 			)
 		);
@@ -79,18 +79,18 @@ class MTS_Admin_Bar {
 		// Add each theme as a submenu item.
 		foreach ( $themes as $theme_slug => $theme_obj ) {
 			$is_current = ( $active_theme === $theme_slug );
-			$title      = $is_current ? '<span class="mts-current-indicator">✓</span> ' . esc_html( $theme_obj->get( 'Name' ) ) : esc_html( $theme_obj->get( 'Name' ) );
-			$nonce      = wp_create_nonce( 'mts_admin_theme_nonce' );
+			$title      = $is_current ? '<span class="omts-current-indicator">✓</span> ' . esc_html( $theme_obj->get( 'Name' ) ) : esc_html( $theme_obj->get( 'Name' ) );
+			$nonce      = wp_create_nonce( 'omts_admin_theme_nonce' );
 
 			$wp_admin_bar->add_node(
 				array(
-					'parent' => 'mts-admin-theme-switcher',
-					'id'     => 'mts-theme-' . $theme_slug,
+					'parent' => 'omts-admin-theme-switcher',
+					'id'     => 'omts-theme-' . $theme_slug,
 					'title'  => $title,
 					'href'   => '#',
 					'meta'   => array(
-						'class'   => 'mts-theme-option' . ( $is_current ? ' mts-current-theme' : '' ),
-						'onclick' => 'mtsAdminBarSwitchTheme("' . esc_js( $theme_slug ) . '", "' . esc_js( $nonce ) . '"); return false;',
+						'class'   => 'omts-theme-option' . ( $is_current ? ' omts-current-theme' : '' ),
+						'onclick' => 'omtsAdminBarSwitchTheme("' . esc_js( $theme_slug ) . '", "' . esc_js( $nonce ) . '"); return false;',
 					),
 				)
 			);
@@ -108,7 +108,7 @@ class MTS_Admin_Bar {
 		}
 
 		wp_enqueue_style(
-			'mts-admin-bar-css',
+			'omts-admin-bar-css',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-bar-style.css',
 			array(),
 			'1.0.0'
@@ -126,7 +126,7 @@ class MTS_Admin_Bar {
 		}
 
 		wp_enqueue_script(
-			'mts-admin-bar-js',
+			'omts-admin-bar-js',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-bar-script.js',
 			array( 'jquery' ),
 			'1.0.2',
@@ -134,11 +134,11 @@ class MTS_Admin_Bar {
 		);
 
 		wp_localize_script(
-			'mts-admin-bar-js',
-			'mtsAdminBar',
+			'omts-admin-bar-js',
+			'omtsAdminBar',
 			array(
 				'ajaxurl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'mts_admin_theme_nonce' ),
+				'nonce'   => wp_create_nonce( 'omts_admin_theme_nonce' ),
 			)
 		);
 	}

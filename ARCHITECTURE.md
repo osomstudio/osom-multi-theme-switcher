@@ -1,4 +1,4 @@
-# Multi Theme Switcher - Architecture
+# Osom Multi Theme Switcher - Architecture
 
 ## Overview
 
@@ -7,28 +7,29 @@ The plugin follows WordPress coding standards and uses an object-oriented archit
 ## File Structure
 
 ```
-multi-theme-switcher/
-├── multi-theme-switcher.php          # Main plugin file (bootstrap)
-├── index.php                         # Security file
-├── README.md                         # User documentation
-├── ARCHITECTURE.md                   # This file
-├── assets/                           # Frontend assets
-│   ├── admin-style.css              # Admin page styles
-│   ├── admin-script.js              # Admin page JavaScript
-│   ├── admin-bar-style.css          # Admin bar styles
-│   └── admin-bar-script.js          # Admin bar JavaScript
-└── includes/                         # PHP classes
-    ├── class-multi-theme-switcher.php    # Main plugin class
-    ├── class-mts-theme-switcher.php      # Theme switching logic
-    ├── class-mts-admin-page.php          # Admin settings page
-    ├── class-mts-admin-bar.php           # Admin bar menu
-    └── class-mts-ajax-handler.php        # AJAX request handlers
+osom-multi-theme-switcher/
+├── osom-multi-theme-switcher.php         # Main plugin file (bootstrap)
+├── index.php                             # Security file
+├── README.md                             # User documentation
+├── ARCHITECTURE.md                       # This file
+├── assets/                               # Frontend assets
+│   ├── admin-style.css                   # Admin page styles
+│   ├── admin-script.js                   # Admin page JavaScript
+│   ├── admin-bar-style.css               # Admin bar styles
+│   └── admin-bar-script.js               # Admin bar JavaScript
+└── includes/                             # PHP classes
+    ├── class-osom-multi-theme-switcher.php   # Main plugin class
+    ├── class-omts-theme-switcher.php         # Theme switching logic
+    ├── class-omts-admin-page.php             # Admin settings page
+    ├── class-omts-admin-bar.php              # Admin bar menu
+    ├── class-omts-ajax-handler.php           # AJAX request handlers
+    └── class-omts-acf-loader.php             # ACF JSON loader
 ```
 
 ## Class Responsibilities
 
-### Multi_Theme_Switcher
-**File:** `includes/class-multi-theme-switcher.php`
+### Osom_Multi_Theme_Switcher
+**File:** `includes/class-osom-multi-theme-switcher.php`
 
 Main plugin class that initializes and coordinates all components.
 
@@ -45,8 +46,8 @@ Main plugin class that initializes and coordinates all components.
 
 ---
 
-### MTS_Theme_Switcher
-**File:** `includes/class-mts-theme-switcher.php`
+### OMTS_Theme_Switcher
+**File:** `includes/class-omts-theme-switcher.php`
 
 Core theme switching functionality.
 
@@ -69,8 +70,8 @@ Core theme switching functionality.
 
 ---
 
-### MTS_Admin_Page
-**File:** `includes/class-mts-admin-page.php`
+### OMTS_Admin_Page
+**File:** `includes/class-omts-admin-page.php`
 
 Manages the admin settings page interface.
 
@@ -94,8 +95,8 @@ Manages the admin settings page interface.
 
 ---
 
-### MTS_Admin_Bar
-**File:** `includes/class-mts-admin-bar.php`
+### OMTS_Admin_Bar
+**File:** `includes/class-omts-admin-bar.php`
 
 Handles the WordPress admin bar theme switcher menu.
 
@@ -111,8 +112,8 @@ Handles the WordPress admin bar theme switcher menu.
 
 ---
 
-### MTS_Ajax_Handler
-**File:** `includes/class-mts-ajax-handler.php`
+### OMTS_Ajax_Handler
+**File:** `includes/class-omts-ajax-handler.php`
 
 Processes all AJAX requests.
 
@@ -130,15 +131,29 @@ Processes all AJAX requests.
 
 ---
 
+### OMTS_ACF_Loader
+**File:** `includes/class-omts-acf-loader.php`
+
+Handles loading ACF JSON files from multiple themes.
+
+**Responsibilities:**
+- Add ACF JSON load points for all themes
+- Ensure ACF fields are available regardless of active theme
+
+**Methods:**
+- `add_acf_json_load_points()` - Adds ACF JSON paths for all themes
+
+---
+
 ## WordPress Coding Standards
 
 The plugin follows these WordPress coding standards:
 
 ### Naming Conventions
-- **Classes:** PascalCase with underscores (e.g., `MTS_Admin_Page`)
+- **Classes:** PascalCase with underscores (e.g., `OMTS_Admin_Page`)
 - **Methods:** snake_case (e.g., `get_admin_theme_preference()`)
 - **Variables:** snake_case (e.g., `$theme_switcher`)
-- **Constants:** UPPERCASE with underscores (e.g., `MTS_VERSION`)
+- **Constants:** UPPERCASE with underscores (e.g., `OMTS_VERSION`)
 
 ### Documentation
 - Every class has a file-level DocBlock
@@ -153,7 +168,7 @@ The plugin follows these WordPress coding standards:
 
 ### Internationalization
 - All user-facing strings wrapped in translation functions
-- Text domain: `multi-theme-switcher`
+- Text domain: `osom-multi-theme-switcher`
 - Translation functions: `__()`, `esc_html__()`, `esc_attr__()`
 
 ### Code Organization
@@ -167,21 +182,21 @@ The plugin follows these WordPress coding standards:
 ### Frontend Theme Switching
 1. User visits a page
 2. WordPress loads active theme
-3. `MTS_Theme_Switcher` filters intercept theme loading
+3. `OMTS_Theme_Switcher` filters intercept theme loading
 4. Rules are checked against current request
 5. If match found, alternative theme is loaded
 
 ### Admin Theme Switching
 1. User clicks theme in admin bar
 2. JavaScript sends AJAX request
-3. `MTS_Ajax_Handler` validates and saves preference
+3. `OMTS_Ajax_Handler` validates and saves preference
 4. Page reloads
-5. `MTS_Theme_Switcher` applies admin theme preference
+5. `OMTS_Theme_Switcher` applies admin theme preference
 
 ### Rule Management
 1. User fills form on settings page
 2. JavaScript validates input
-3. AJAX request sent to `MTS_Ajax_Handler`
+3. AJAX request sent to `OMTS_Ajax_Handler`
 4. Rule saved to WordPress options
 5. Table updated via JavaScript
 
@@ -205,12 +220,12 @@ The plugin can be extended through:
    - All WordPress standard hooks available
 
 3. **Direct Access:**
-   - `multi_theme_switcher()` - Returns plugin instance
+   - `osom_multi_theme_switcher()` - Returns plugin instance
    - Access any component via the main instance
 
 Example:
 ```php
-$plugin = multi_theme_switcher();
+$plugin = osom_multi_theme_switcher();
 $rules = $plugin->theme_switcher->get_rules();
 ```
 

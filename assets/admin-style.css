@@ -1,73 +1,73 @@
-/* Multi Theme Switcher Admin Styles */
+/* Osom Multi Theme Switcher Admin Styles */
 
-.mts-admin-wrap {
+.omts-admin-wrap {
     max-width: 1200px;
 }
 
-.mts-container {
+.omts-container {
     display: grid;
     grid-template-columns: 1fr;
     gap: 30px;
     margin-top: 20px;
 }
 
-.mts-add-rule-section,
-.mts-rules-list-section {
+.omts-add-rule-section,
+.omts-rules-list-section {
     background: #fff;
     border: 1px solid #ccd0d4;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
     padding: 20px;
 }
 
-.mts-add-rule-section h2,
-.mts-rules-list-section h2 {
+.omts-add-rule-section h2,
+.omts-rules-list-section h2 {
     margin-top: 0;
     padding-bottom: 10px;
     border-bottom: 1px solid #e5e5e5;
 }
 
-#mts-add-rule-form .form-table {
+#omts-add-rule-form .form-table {
     margin-top: 20px;
 }
 
-#mts-add-rule-form .form-table th {
+#omts-add-rule-form .form-table th {
     width: 200px;
 }
 
-.mts-rules-list-section table {
+.omts-rules-list-section table {
     margin-top: 20px;
 }
 
-.mts-no-rules {
+.omts-no-rules {
     text-align: center;
     font-style: italic;
     color: #666;
 }
 
-.mts-delete-rule {
+.omts-delete-rule {
     color: #b32d2e;
 }
 
-.mts-delete-rule:hover {
+.omts-delete-rule:hover {
     color: #dc3232;
     border-color: #dc3232;
 }
 
 /* Form field styling */
-#mts-add-rule-form select,
-#mts-add-rule-form input[type="text"] {
+#omts-add-rule-form select,
+#omts-add-rule-form input[type="text"] {
     width: 100%;
     max-width: 400px;
 }
 
 /* Loading state */
-.mts-loading {
+.omts-loading {
     opacity: 0.6;
     pointer-events: none;
 }
 
 /* Success message */
-.mts-success-message {
+.omts-success-message {
     display: inline-block;
     margin-left: 10px;
     color: #46b450;
@@ -82,7 +82,7 @@
 }
 
 /* REST Prefix Section */
-.mts-rest-prefix-section {
+.omts-rest-prefix-section {
     background: #fff;
     border: 1px solid #ccd0d4;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
@@ -90,77 +90,77 @@
     margin-top: 30px;
 }
 
-.mts-rest-prefix-section h2 {
+.omts-rest-prefix-section h2 {
     margin-top: 0;
     padding-bottom: 10px;
     border-bottom: 1px solid #e5e5e5;
 }
 
-.mts-rest-prefix-section h3 {
+.omts-rest-prefix-section h3 {
     margin-top: 0;
     font-size: 1.1em;
 }
 
-.mts-rest-prefix-section .description {
+.omts-rest-prefix-section .description {
     color: #666;
     font-size: 13px;
     margin-bottom: 20px;
 }
 
-.mts-add-prefix-section {
+.omts-add-prefix-section {
     margin-bottom: 30px;
     padding-bottom: 20px;
     border-bottom: 1px solid #e5e5e5;
 }
 
-#mts-add-prefix-form .form-table {
+#omts-add-prefix-form .form-table {
     margin-top: 10px;
 }
 
-#mts-add-prefix-form .form-table th {
+#omts-add-prefix-form .form-table th {
     width: 200px;
 }
 
-#mts-add-prefix-form select,
-#mts-add-prefix-form input[type="text"] {
+#omts-add-prefix-form select,
+#omts-add-prefix-form input[type="text"] {
     width: 100%;
     max-width: 400px;
 }
 
-.mts-prefixes-list table {
+.omts-prefixes-list table {
     margin-top: 10px;
 }
 
-.mts-prefixes-list table code {
+.omts-prefixes-list table code {
     background: #f0f0f1;
     padding: 3px 6px;
     border-radius: 3px;
     font-size: 12px;
 }
 
-.mts-no-prefixes {
+.omts-no-prefixes {
     text-align: center;
     font-style: italic;
     color: #666;
 }
 
-.mts-delete-prefix {
+.omts-delete-prefix {
     color: #b32d2e;
 }
 
-.mts-delete-prefix:hover {
+.omts-delete-prefix:hover {
     color: #dc3232;
     border-color: #dc3232;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .mts-container {
+    .omts-container {
         grid-template-columns: 1fr;
     }
 
-    #mts-add-rule-form .form-table th,
-    #mts-add-prefix-form .form-table th {
+    #omts-add-rule-form .form-table th,
+    #omts-add-prefix-form .form-table th {
         width: auto;
     }
 }

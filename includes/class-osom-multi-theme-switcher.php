@@ -4,7 +4,7 @@
  *
  * Initializes and coordinates all plugin components.
  *
- * @package Multi_Theme_Switcher
+ * @package Osom_Multi_Theme_Switcher
  * @since   1.0.0
  */
 
@@ -14,11 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Class Multi_Theme_Switcher
+ * Class Osom_Multi_Theme_Switcher
  *
  * @since 1.0.0
  */
-class Multi_Theme_Switcher {
+class Osom_Multi_Theme_Switcher {
 
 	/**
 	 * Plugin version.
@@ -30,42 +30,42 @@ class Multi_Theme_Switcher {
 	/**
 	 * Single instance of the class.
 	 *
-	 * @var Multi_Theme_Switcher
+	 * @var Osom_Multi_Theme_Switcher
 	 */
 	private static $instance = null;
 
 	/**
 	 * Theme switcher instance.
 	 *
-	 * @var MTS_Theme_Switcher
+	 * @var OMTS_Theme_Switcher
 	 */
 	public $theme_switcher;
 
 	/**
 	 * Admin page instance.
 	 *
-	 * @var MTS_Admin_Page
+	 * @var OMTS_Admin_Page
 	 */
 	public $admin_page;
 
 	/**
 	 * Admin bar instance.
 	 *
-	 * @var MTS_Admin_Bar
+	 * @var OMTS_Admin_Bar
 	 */
 	public $admin_bar;
 
 	/**
 	 * AJAX handler instance.
 	 *
-	 * @var MTS_Ajax_Handler
+	 * @var OMTS_Ajax_Handler
 	 */
 	public $ajax_handler;
 
 	/**
 	 * ACF loader instance.
 	 *
-	 * @var MTS_ACF_Loader
+	 * @var OMTS_ACF_Loader
 	 */
 	public $acf_loader;
 
@@ -74,7 +74,7 @@ class Multi_Theme_Switcher {
 	 *
 	 * @since 1.0.0
 	 *
-	 * @return Multi_Theme_Switcher
+	 * @return Osom_Multi_Theme_Switcher
 	 */
 	public static function get_instance() {
 		if ( null === self::$instance ) {
@@ -99,11 +99,11 @@ class Multi_Theme_Switcher {
 	 * @since 1.0.0
 	 */
 	private function load_dependencies() {
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-mts-theme-switcher.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-mts-admin-page.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-mts-admin-bar.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-mts-ajax-handler.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-mts-acf-loader.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-theme-switcher.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-admin-page.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-admin-bar.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-ajax-handler.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-acf-loader.php';
 	}
 
 	/**
@@ -113,19 +113,19 @@ class Multi_Theme_Switcher {
 	 */
 	private function init_components() {
 		// Initialize theme switcher (core functionality).
-		$this->theme_switcher = new MTS_Theme_Switcher();
+		$this->theme_switcher = new OMTS_Theme_Switcher();
 
 		// Initialize ACF loader (loads ACF JSON from all themes).
-		$this->acf_loader = new MTS_ACF_Loader();
+		$this->acf_loader = new OMTS_ACF_Loader();
 
 		// Initialize admin components.
 		if ( is_admin() ) {
-			$this->admin_page   = new MTS_Admin_Page( $this->theme_switcher );
-			$this->ajax_handler = new MTS_Ajax_Handler( $this->theme_switcher, $this->admin_page );
+			$this->admin_page   = new OMTS_Admin_Page( $this->theme_switcher );
+			$this->ajax_handler = new OMTS_Ajax_Handler( $this->theme_switcher, $this->admin_page );
 		}
 
 		// Initialize admin bar (shown on both admin and frontend).
-		$this->admin_bar = new MTS_Admin_Bar( $this->theme_switcher );
+		$this->admin_bar = new OMTS_Admin_Bar( $this->theme_switcher );
 	}
 
 	/**
