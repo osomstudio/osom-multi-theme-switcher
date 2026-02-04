@@ -25,7 +25,7 @@ class Osom_Multi_Theme_Switcher {
 	 *
 	 * @var string
 	 */
-	const VERSION = '1.0.1';
+	const VERSION = '1.0.2';
 
 	/**
 	 * Single instance of the class.
