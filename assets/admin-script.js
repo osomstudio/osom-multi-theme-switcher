@@ -86,6 +86,12 @@ jQuery(document).ready(function($) {
                     });
                 }
             },
+            error: function(xhr, status) {
+                if (status !== 'abort') {
+                    console.error('OMTS: Failed to load rule objects', status);
+                    $('#omts-rule-object').html('<option value="" disabled>Error loading objects</option>');
+                }
+            },
             complete: function() {
                 if (pendingObjectsRequest === thisRequest) {
                     pendingObjectsRequest = null;
@@ -125,6 +131,12 @@ jQuery(document).ready(function($) {
                                 .text(item.label)
                         );
                     });
+                }
+            },
+            error: function(xhr, status) {
+                if (status !== 'abort') {
+                    console.error('OMTS: Failed to load rule items', status);
+                    $('#omts-rule-item').html('<option value="" disabled>Error loading items</option>');
                 }
             },
             complete: function() {
@@ -446,6 +458,10 @@ jQuery(document).ready(function($) {
     }
 
     function escapeHtml(text) {
+        if (text == null) {
+            return '';
+        }
+        text = String(text);
         const map = {
             '&': '&amp;',
             '<': '&lt;',

@@ -334,30 +334,7 @@ class OMTS_Admin_Page {
 	 * @return string Display name.
 	 */
 	private function get_rule_type_display( $type ) {
-		$type_map = array(
-			'page'             => __( 'Page', 'osom-multi-theme-switcher' ),
-			'post'             => __( 'Post', 'osom-multi-theme-switcher' ),
-			'post_type'        => __( 'Custom Post Type', 'osom-multi-theme-switcher' ),
-			'url'              => __( 'Custom URL', 'osom-multi-theme-switcher' ),
-			'category'         => __( 'Category', 'osom-multi-theme-switcher' ),
-			'tag'              => __( 'Tag', 'osom-multi-theme-switcher' ),
-			'taxonomy'         => __( 'Taxonomy', 'osom-multi-theme-switcher' ),
-			'cpt_item'         => __( 'CPT Item', 'osom-multi-theme-switcher' ),
-			'draft_page'       => __( 'Page', 'osom-multi-theme-switcher' ),
-			'draft_post'       => __( 'Post', 'osom-multi-theme-switcher' ),
-			'pending_page'     => __( 'Page', 'osom-multi-theme-switcher' ),
-			'pending_post'     => __( 'Post', 'osom-multi-theme-switcher' ),
-			'private_page'     => __( 'Page', 'osom-multi-theme-switcher' ),
-			'private_post'     => __( 'Post', 'osom-multi-theme-switcher' ),
-			'future_page'      => __( 'Page', 'osom-multi-theme-switcher' ),
-			'future_post'      => __( 'Post', 'osom-multi-theme-switcher' ),
-			'draft_cpt_item'   => __( 'CPT Item', 'osom-multi-theme-switcher' ),
-			'pending_cpt_item' => __( 'CPT Item', 'osom-multi-theme-switcher' ),
-			'private_cpt_item' => __( 'CPT Item', 'osom-multi-theme-switcher' ),
-			'future_cpt_item'  => __( 'CPT Item', 'osom-multi-theme-switcher' ),
-		);
-
-		return isset( $type_map[ $type ] ) ? $type_map[ $type ] : ucfirst( str_replace( '_', ' ', $type ) );
+		return OMTS_Theme_Switcher::get_rule_type_display( $type );
 	}
 
 	/**

@@ -495,6 +495,43 @@ class OMTS_Theme_Switcher {
 	}
 
 	/**
+	 * Get human-readable display name for rule type.
+	 *
+	 * Shared by OMTS_Admin_Page and OMTS_Ajax_Handler to avoid duplication.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $type Rule type.
+	 * @return string Display name.
+	 */
+	public static function get_rule_type_display( $type ) {
+		$type_map = array(
+			'page'             => __( 'Page', 'osom-multi-theme-switcher' ),
+			'post'             => __( 'Post', 'osom-multi-theme-switcher' ),
+			'post_type'        => __( 'Custom Post Type', 'osom-multi-theme-switcher' ),
+			'url'              => __( 'Custom URL', 'osom-multi-theme-switcher' ),
+			'category'         => __( 'Category', 'osom-multi-theme-switcher' ),
+			'tag'              => __( 'Tag', 'osom-multi-theme-switcher' ),
+			'taxonomy'         => __( 'Taxonomy', 'osom-multi-theme-switcher' ),
+			'cpt_item'         => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+			'draft_page'       => __( 'Page', 'osom-multi-theme-switcher' ),
+			'draft_post'       => __( 'Post', 'osom-multi-theme-switcher' ),
+			'pending_page'     => __( 'Page', 'osom-multi-theme-switcher' ),
+			'pending_post'     => __( 'Post', 'osom-multi-theme-switcher' ),
+			'private_page'     => __( 'Page', 'osom-multi-theme-switcher' ),
+			'private_post'     => __( 'Post', 'osom-multi-theme-switcher' ),
+			'future_page'      => __( 'Page', 'osom-multi-theme-switcher' ),
+			'future_post'      => __( 'Post', 'osom-multi-theme-switcher' ),
+			'draft_cpt_item'   => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+			'pending_cpt_item' => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+			'private_cpt_item' => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+			'future_cpt_item'  => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+		);
+
+		return isset( $type_map[ $type ] ) ? $type_map[ $type ] : ucfirst( str_replace( '_', ' ', $type ) );
+	}
+
+	/**
 	 * Check if current request is a REST API request.
 	 *
 	 * @since 1.0.1
@@ -1506,9 +1543,24 @@ class OMTS_Theme_Switcher {
 		$path          = trim( $request_uri, '/' );
 		$path_segments = explode( '/', $path );
 
-		foreach ( $path_segments as $segment ) {
-			if ( $segment === $slug ) {
-				return true;
+		// Determine the rewrite base for this CPT.
+		$rewrite_base  = $post->post_type;
+		$post_type_obj = get_post_type_object( $post->post_type );
+		if ( $post_type_obj && is_array( $post_type_obj->rewrite ) && isset( $post_type_obj->rewrite['slug'] ) ) {
+			$rewrite_base = trim( $post_type_obj->rewrite['slug'], '/' );
+		}
+
+		// Match only when the slug appears directly after the rewrite base.
+		$base_segments = explode( '/', $rewrite_base );
+		$base_len      = count( $base_segments );
+
+		for ( $i = 0, $total = count( $path_segments ); $i < $total; $i++ ) {
+			// Check if rewrite base starts at this position.
+			if ( array_slice( $path_segments, $i, $base_len ) === $base_segments ) {
+				$slug_index = $i + $base_len;
+				if ( isset( $path_segments[ $slug_index ] ) && $path_segments[ $slug_index ] === $slug ) {
+					return true;
+				}
 			}
 		}
 
@@ -1663,8 +1715,12 @@ class OMTS_Theme_Switcher {
 		// Get the currently active theme (may be the switched theme due to our rules).
 		// We capture CPTs/taxonomies under this theme key so they can be
 		// re-registered when a different theme is active via switching rules.
-		$default_theme = get_option( 'stylesheet' );
-		$registry      = get_option( $this->theme_registry_option, array() );
+		$default_theme    = get_option( 'stylesheet' );
+		$registry         = get_option( $this->theme_registry_option, array() );
+		$installed_themes = wp_get_themes();
+
+		// Prune registry entries for themes that are no longer installed.
+		$registry = array_intersect_key( $registry, $installed_themes );
 
 		// Collect public CPTs (excluding built-in page/post/attachment).
 		$post_types = get_post_types( array( 'public' => true ), 'objects' );
