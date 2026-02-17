@@ -102,7 +102,6 @@ class OMTS_Admin_Page {
 		$rules         = $this->theme_switcher->get_rules();
 		$rest_prefixes = $this->theme_switcher->get_theme_rest_prefixes();
 		$themes        = wp_get_themes();
-		$current_theme = wp_get_theme()->get_stylesheet();
 		?>
 		<div class="wrap omts-admin-wrap">
 			<h1><?php esc_html_e( 'Osom Multi Theme Switcher', 'osom-multi-theme-switcher' ); ?></h1>

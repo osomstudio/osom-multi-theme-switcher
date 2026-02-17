@@ -245,6 +245,12 @@ class OMTS_Ajax_Handler {
 				} else {
 					$rule['type']     = 'taxonomy';
 					$rule['taxonomy'] = $object_type;
+
+					// Store rewrite slug for early matching (before taxonomy is registered).
+					$tax_obj = get_taxonomy( $object_type );
+					if ( $tax_obj && isset( $tax_obj->rewrite['slug'] ) ) {
+						$rule['rewrite_slug'] = $tax_obj->rewrite['slug'];
+					}
 				}
 				$rule['value'] = $item_id;
 				break;
@@ -369,7 +375,7 @@ class OMTS_Ajax_Handler {
 					array(
 						'post_type'   => 'page',
 						'post_status' => $all_statuses,
-						'numberposts' => -1,
+						'numberposts' => 500,
 						'orderby'     => 'title',
 						'order'       => 'ASC',
 					)
@@ -391,7 +397,7 @@ class OMTS_Ajax_Handler {
 					array(
 						'post_type'   => 'post',
 						'post_status' => $all_statuses,
-						'numberposts' => -1,
+						'numberposts' => 500,
 						'orderby'     => 'title',
 						'order'       => 'ASC',
 					)
@@ -431,7 +437,7 @@ class OMTS_Ajax_Handler {
 					array(
 						'post_type'   => $object_type,
 						'post_status' => $all_statuses,
-						'numberposts' => -1,
+						'numberposts' => 500,
 						'orderby'     => 'title',
 						'order'       => 'ASC',
 					)

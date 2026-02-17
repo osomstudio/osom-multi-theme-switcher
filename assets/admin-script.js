@@ -52,12 +52,20 @@ jQuery(document).ready(function($) {
         loadRuleItems(ruleType, objectType);
     });
 
+    // Track pending AJAX requests to abort stale responses
+    var pendingObjectsRequest = null;
+    var pendingItemsRequest = null;
+
     // Load rule objects via AJAX
     function loadRuleObjects(ruleType) {
+        if (pendingObjectsRequest) {
+            pendingObjectsRequest.abort();
+        }
+
         const spinner = $('#omts-object-spinner');
         spinner.addClass('is-active');
 
-        $.ajax({
+        pendingObjectsRequest = $.ajax({
             url: omtsAjax.ajaxurl,
             type: 'POST',
             data: {
@@ -79,6 +87,7 @@ jQuery(document).ready(function($) {
                 }
             },
             complete: function() {
+                pendingObjectsRequest = null;
                 spinner.removeClass('is-active');
             }
         });
@@ -86,10 +95,14 @@ jQuery(document).ready(function($) {
 
     // Load rule items via AJAX
     function loadRuleItems(ruleType, objectType) {
+        if (pendingItemsRequest) {
+            pendingItemsRequest.abort();
+        }
+
         const spinner = $('#omts-item-spinner');
         spinner.addClass('is-active');
 
-        $.ajax({
+        pendingItemsRequest = $.ajax({
             url: omtsAjax.ajaxurl,
             type: 'POST',
             data: {
@@ -112,6 +125,7 @@ jQuery(document).ready(function($) {
                 }
             },
             complete: function() {
+                pendingItemsRequest = null;
                 spinner.removeClass('is-active');
             }
         });

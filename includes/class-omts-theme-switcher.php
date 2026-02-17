@@ -364,7 +364,7 @@ class OMTS_Theme_Switcher {
 			}
 			if ( 'taxonomy' === $rule['type'] ) {
 				$taxonomy = isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : '';
-				return $taxonomy ? $this->match_taxonomy_early( $rule['value'], $taxonomy ) : false;
+				return $taxonomy ? $this->match_taxonomy_early( $rule['value'], $taxonomy, $rule ) : false;
 			}
 			if ( 'post_type' === $rule['type'] ) {
 				return $this->match_post_type_early( $rule );
@@ -1355,13 +1355,17 @@ class OMTS_Theme_Switcher {
 	/**
 	 * Match custom taxonomy rule early by checking URL against taxonomy rewrite slug.
 	 *
+	 * Falls back to a stored rewrite_slug on the rule when get_taxonomy() is not
+	 * available yet (e.g., during setup_theme before taxonomies are registered).
+	 *
 	 * @since 1.2.0
 	 *
 	 * @param int    $term_id  Term ID.
 	 * @param string $taxonomy Taxonomy name.
+	 * @param array  $rule     Rule array with optional rewrite_slug.
 	 * @return bool Whether current URL matches the taxonomy term.
 	 */
-	private function match_taxonomy_early( $term_id, $taxonomy ) {
+	private function match_taxonomy_early( $term_id, $taxonomy, $rule = array() ) {
 		global $wpdb;
 
 		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
@@ -1383,8 +1387,15 @@ class OMTS_Theme_Switcher {
 			return false;
 		}
 
-		$tax_obj = get_taxonomy( $taxonomy );
-		if ( ! $tax_obj || ! isset( $tax_obj->rewrite['slug'] ) ) {
+		// Try get_taxonomy() first (available after init).
+		$rewrite_slug = '';
+		$tax_obj      = get_taxonomy( $taxonomy );
+		if ( $tax_obj && isset( $tax_obj->rewrite['slug'] ) ) {
+			$rewrite_slug = $tax_obj->rewrite['slug'];
+		} elseif ( ! empty( $rule['rewrite_slug'] ) ) {
+			// Fallback to stored slug (works during setup_theme before taxonomies are registered).
+			$rewrite_slug = $rule['rewrite_slug'];
+		} else {
 			return false;
 		}
 
@@ -1392,7 +1403,7 @@ class OMTS_Theme_Switcher {
 		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
 		$path          = trim( $request_uri, '/' );
 
-		$rewrite_slug  = trim( $tax_obj->rewrite['slug'], '/' );
+		$rewrite_slug  = trim( $rewrite_slug, '/' );
 		$expected_path = $rewrite_slug . '/' . $term->slug;
 
 		return $path === $expected_path || 0 === strpos( $path, $expected_path . '/' );
@@ -1649,9 +1660,9 @@ class OMTS_Theme_Switcher {
 	 * @since 1.2.0
 	 */
 	public function capture_theme_objects() {
-		// Determine the "source" theme — the default (non-switched) theme.
-		// We only want to capture CPTs from the original default theme,
-		// not from a theme that was switched to via our plugin rules.
+		// Get the currently active theme (may be the switched theme due to our rules).
+		// We capture CPTs/taxonomies under this theme key so they can be
+		// re-registered when a different theme is active via switching rules.
 		$default_theme = get_option( 'stylesheet' );
 		$registry      = get_option( $this->theme_registry_option, array() );
 

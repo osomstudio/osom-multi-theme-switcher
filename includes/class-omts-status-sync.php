@@ -5,7 +5,7 @@
  * Automatically synchronizes theme rules when post status changes.
  *
  * @package Osom_Multi_Theme_Switcher
- * @since   1.1.0
+ * @since   1.2.0
  */
 
 // Prevent direct access.
@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Handles automatic rule type updates when post/page status changes.
  *
- * @since 1.1.0
+ * @since 1.2.0
  */
 class OMTS_Status_Sync {
 
@@ -71,7 +71,7 @@ class OMTS_Status_Sync {
 	/**
 	 * Constructor.
 	 *
-	 * @since 1.1.0
+	 * @since 1.2.0
 	 *
 	 * @param OMTS_Theme_Switcher $theme_switcher Theme switcher instance.
 	 */
@@ -83,7 +83,7 @@ class OMTS_Status_Sync {
 	/**
 	 * Initialize hooks.
 	 *
-	 * @since 1.1.0
+	 * @since 1.2.0
 	 */
 	private function init() {
 		add_action( 'transition_post_status', array( $this, 'sync_rules_on_status_change' ), 10, 3 );
@@ -92,7 +92,7 @@ class OMTS_Status_Sync {
 	/**
 	 * Synchronize rules when post status changes.
 	 *
-	 * @since 1.1.0
+	 * @since 1.2.0
 	 *
 	 * @param string  $new_status New post status.
 	 * @param string  $old_status Old post status.
@@ -160,7 +160,7 @@ class OMTS_Status_Sync {
 	/**
 	 * Check if a rule matches a specific post.
 	 *
-	 * @since 1.1.0
+	 * @since 1.2.0
 	 *
 	 * @param array  $rule       Rule to check.
 	 * @param int    $post_id    Post ID.
@@ -200,7 +200,7 @@ class OMTS_Status_Sync {
 	/**
 	 * Get rule type for a given status and post type.
 	 *
-	 * @since 1.1.0
+	 * @since 1.2.0
 	 *
 	 * @param string $status    Post status.
 	 * @param string $post_type Post type.
@@ -222,7 +222,7 @@ class OMTS_Status_Sync {
 	/**
 	 * Check if post type is supported for rule synchronization.
 	 *
-	 * @since 1.1.0
+	 * @since 1.2.0
 	 *
 	 * @param string $post_type Post type to check.
 	 * @return bool Whether post type is supported.

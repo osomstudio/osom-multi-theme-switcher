@@ -90,7 +90,7 @@ class OMTS_Admin_Bar {
 					'href'   => '#',
 					'meta'   => array(
 						'class'   => 'omts-theme-option' . ( $is_current ? ' omts-current-theme' : '' ),
-						'onclick' => 'oomtsAdminBarSwitchTheme("' . esc_js( $theme_slug ) . '", "' . esc_js( $nonce ) . '"); return false;',
+						'onclick' => 'omtsAdminBarSwitchTheme("' . esc_js( $theme_slug ) . '", "' . esc_js( $nonce ) . '"); return false;',
 					),
 				)
 			);
