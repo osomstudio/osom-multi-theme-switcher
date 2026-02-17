@@ -197,6 +197,11 @@ class OMTS_Ajax_Handler {
 				$object_type = isset( $_POST['object_type'] ) ? sanitize_text_field( wp_unslash( $_POST['object_type'] ) ) : '';
 				$item_id     = isset( $_POST['item_id'] ) ? sanitize_text_field( wp_unslash( $_POST['item_id'] ) ) : '';
 
+				if ( empty( $object_type ) ) {
+					$rule['value'] = '';
+					break;
+				}
+
 				if ( '__all__' === $item_id ) {
 					// "All" option — store as post_type rule.
 					$rule['type']  = 'post_type';
@@ -208,7 +213,7 @@ class OMTS_Ajax_Handler {
 						if ( $pt_obj->has_archive ) {
 							$rule['archive_slug'] = true === $pt_obj->has_archive ? $object_type : $pt_obj->has_archive;
 						}
-						if ( isset( $pt_obj->rewrite['slug'] ) ) {
+						if ( is_array( $pt_obj->rewrite ) && isset( $pt_obj->rewrite['slug'] ) ) {
 							$rule['rewrite_slug'] = $pt_obj->rewrite['slug'];
 						}
 					}
@@ -238,6 +243,11 @@ class OMTS_Ajax_Handler {
 				$object_type = isset( $_POST['object_type'] ) ? sanitize_text_field( wp_unslash( $_POST['object_type'] ) ) : '';
 				$item_id     = isset( $_POST['item_id'] ) ? intval( $_POST['item_id'] ) : 0;
 
+				if ( empty( $object_type ) ) {
+					$rule['value'] = '';
+					break;
+				}
+
 				if ( 'category' === $object_type ) {
 					$rule['type'] = 'category';
 				} elseif ( 'post_tag' === $object_type ) {
@@ -248,7 +258,7 @@ class OMTS_Ajax_Handler {
 
 					// Store rewrite slug for early matching (before taxonomy is registered).
 					$tax_obj = get_taxonomy( $object_type );
-					if ( $tax_obj && isset( $tax_obj->rewrite['slug'] ) ) {
+					if ( $tax_obj && is_array( $tax_obj->rewrite ) && isset( $tax_obj->rewrite['slug'] ) ) {
 						$rule['rewrite_slug'] = $tax_obj->rewrite['slug'];
 					}
 				}

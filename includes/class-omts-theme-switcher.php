@@ -1390,7 +1390,7 @@ class OMTS_Theme_Switcher {
 		// Try get_taxonomy() first (available after init).
 		$rewrite_slug = '';
 		$tax_obj      = get_taxonomy( $taxonomy );
-		if ( $tax_obj && isset( $tax_obj->rewrite['slug'] ) ) {
+		if ( $tax_obj && is_array( $tax_obj->rewrite ) && isset( $tax_obj->rewrite['slug'] ) ) {
 			$rewrite_slug = $tax_obj->rewrite['slug'];
 		} elseif ( ! empty( $rule['rewrite_slug'] ) ) {
 			// Fallback to stored slug (works during setup_theme before taxonomies are registered).
@@ -1455,7 +1455,7 @@ class OMTS_Theme_Switcher {
 					return true;
 				}
 			}
-			if ( isset( $post_type_obj->rewrite['slug'] ) ) {
+			if ( is_array( $post_type_obj->rewrite ) && isset( $post_type_obj->rewrite['slug'] ) ) {
 				$rewrite_slug = trim( $post_type_obj->rewrite['slug'], '/' );
 				if ( 0 === strpos( $path, $rewrite_slug . '/' ) ) {
 					return true;

@@ -65,7 +65,7 @@ jQuery(document).ready(function($) {
         const spinner = $('#omts-object-spinner');
         spinner.addClass('is-active');
 
-        pendingObjectsRequest = $.ajax({
+        var thisRequest = $.ajax({
             url: omtsAjax.ajaxurl,
             type: 'POST',
             data: {
@@ -87,10 +87,13 @@ jQuery(document).ready(function($) {
                 }
             },
             complete: function() {
-                pendingObjectsRequest = null;
-                spinner.removeClass('is-active');
+                if (pendingObjectsRequest === thisRequest) {
+                    pendingObjectsRequest = null;
+                    spinner.removeClass('is-active');
+                }
             }
         });
+        pendingObjectsRequest = thisRequest;
     }
 
     // Load rule items via AJAX
@@ -102,7 +105,7 @@ jQuery(document).ready(function($) {
         const spinner = $('#omts-item-spinner');
         spinner.addClass('is-active');
 
-        pendingItemsRequest = $.ajax({
+        var thisRequest = $.ajax({
             url: omtsAjax.ajaxurl,
             type: 'POST',
             data: {
@@ -125,10 +128,13 @@ jQuery(document).ready(function($) {
                 }
             },
             complete: function() {
-                pendingItemsRequest = null;
-                spinner.removeClass('is-active');
+                if (pendingItemsRequest === thisRequest) {
+                    pendingItemsRequest = null;
+                    spinner.removeClass('is-active');
+                }
             }
         });
+        pendingItemsRequest = thisRequest;
     }
 
     // Handle form submission
