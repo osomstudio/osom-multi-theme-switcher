@@ -221,9 +221,15 @@ class OMTS_Ajax_Handler {
 					// Individual CPT item.
 					$item_id = intval( $item_id );
 					$post    = get_post( $item_id );
-					if ( $post && 'publish' === $post->post_status ) {
+
+					if ( ! $post || $post->post_type !== $object_type ) {
+						$rule['value'] = '';
+						break;
+					}
+
+					if ( 'publish' === $post->post_status ) {
 						$rule['type'] = 'cpt_item';
-					} elseif ( $post ) {
+					} else {
 						$status_map   = array(
 							'draft'   => 'draft_cpt_item',
 							'pending' => 'pending_cpt_item',
@@ -231,8 +237,6 @@ class OMTS_Ajax_Handler {
 							'future'  => 'future_cpt_item',
 						);
 						$rule['type'] = isset( $status_map[ $post->post_status ] ) ? $status_map[ $post->post_status ] : 'cpt_item';
-					} else {
-						$rule['type'] = 'cpt_item';
 					}
 					$rule['value']     = $item_id;
 					$rule['post_type'] = $object_type;
@@ -244,6 +248,13 @@ class OMTS_Ajax_Handler {
 				$item_id     = isset( $_POST['item_id'] ) ? intval( $_POST['item_id'] ) : 0;
 
 				if ( empty( $object_type ) ) {
+					$rule['value'] = '';
+					break;
+				}
+
+				// Validate the term exists in the specified taxonomy.
+				$term = get_term( $item_id, $object_type );
+				if ( ! $term || is_wp_error( $term ) || $term->taxonomy !== $object_type ) {
 					$rule['value'] = '';
 					break;
 				}
