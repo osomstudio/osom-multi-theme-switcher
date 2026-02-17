@@ -25,7 +25,7 @@ class Osom_Multi_Theme_Switcher {
 	 *
 	 * @var string
 	 */
-	const VERSION = '1.0.2';
+	const VERSION = '1.2.0';
 
 	/**
 	 * Single instance of the class.
@@ -70,6 +70,13 @@ class Osom_Multi_Theme_Switcher {
 	public $acf_loader;
 
 	/**
+	 * Status sync instance.
+	 *
+	 * @var OMTS_Status_Sync
+	 */
+	public $status_sync;
+
+	/**
 	 * Get single instance.
 	 *
 	 * @since 1.0.0
@@ -104,6 +111,7 @@ class Osom_Multi_Theme_Switcher {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-admin-bar.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-ajax-handler.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-acf-loader.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-status-sync.php';
 	}
 
 	/**
@@ -117,6 +125,9 @@ class Osom_Multi_Theme_Switcher {
 
 		// Initialize ACF loader (loads ACF JSON from all themes).
 		$this->acf_loader = new OMTS_ACF_Loader();
+
+		// Initialize status sync (automatically updates rules on post status changes).
+		$this->status_sync = new OMTS_Status_Sync( $this->theme_switcher );
 
 		// Initialize admin components.
 		if ( is_admin() ) {

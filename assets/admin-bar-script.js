@@ -1,5 +1,5 @@
 // Global function for theme switching (dashboard only)
-function omtsAdminBarSwitchTheme(themeSlug, nonce) {
+function oomtsAdminBarSwitchTheme(themeSlug, nonce) {
     // Use the global ajaxurl if available, otherwise use the localized one
     var ajaxUrl = typeof ajaxurl !== 'undefined' ? ajaxurl : (typeof omtsAdminBar !== 'undefined' ? omtsAdminBar.ajaxurl : '/wp-admin/admin-ajax.php');
 

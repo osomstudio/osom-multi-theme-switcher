@@ -51,6 +51,8 @@ class OMTS_Ajax_Handler {
 		add_action( 'wp_ajax_omts_switch_admin_theme', array( $this, 'ajax_switch_admin_theme' ) );
 		add_action( 'wp_ajax_omts_save_rest_prefix', array( $this, 'ajax_save_rest_prefix' ) );
 		add_action( 'wp_ajax_omts_delete_rest_prefix', array( $this, 'ajax_delete_rest_prefix' ) );
+		add_action( 'wp_ajax_omts_get_rule_objects', array( $this, 'ajax_get_rule_objects' ) );
+		add_action( 'wp_ajax_omts_get_rule_items', array( $this, 'ajax_get_rule_items' ) );
 	}
 
 	/**
@@ -72,56 +74,8 @@ class OMTS_Ajax_Handler {
 			wp_send_json_error( __( 'Please select a theme', 'osom-multi-theme-switcher' ) );
 		}
 
-		$rule = array(
-			'type'  => $rule_type,
-			'theme' => $theme,
-		);
-
-		// Get the value based on rule type.
-		switch ( $rule_type ) {
-			case 'page':
-				$rule['value'] = isset( $_POST['page_id'] ) ? intval( $_POST['page_id'] ) : 0;
-				break;
-			case 'post':
-				$rule['value'] = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
-				break;
-			case 'post_type':
-				$rule['value'] = isset( $_POST['post_type'] ) ? sanitize_text_field( wp_unslash( $_POST['post_type'] ) ) : '';
-				break;
-			case 'draft_page':
-				$rule['value'] = isset( $_POST['page_id'] ) ? intval( $_POST['page_id'] ) : 0;
-				break;
-			case 'draft_post':
-				$rule['value'] = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
-				break;
-			case 'pending_page':
-				$rule['value'] = isset( $_POST['page_id'] ) ? intval( $_POST['page_id'] ) : 0;
-				break;
-			case 'pending_post':
-				$rule['value'] = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
-				break;
-			case 'private_page':
-				$rule['value'] = isset( $_POST['page_id'] ) ? intval( $_POST['page_id'] ) : 0;
-				break;
-			case 'private_post':
-				$rule['value'] = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
-				break;
-			case 'future_page':
-				$rule['value'] = isset( $_POST['page_id'] ) ? intval( $_POST['page_id'] ) : 0;
-				break;
-			case 'future_post':
-				$rule['value'] = isset( $_POST['post_id'] ) ? intval( $_POST['post_id'] ) : 0;
-				break;
-			case 'url':
-				$rule['value'] = isset( $_POST['custom_url'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_url'] ) ) : '';
-				break;
-			case 'category':
-				$rule['value'] = isset( $_POST['category_id'] ) ? intval( $_POST['category_id'] ) : 0;
-				break;
-			case 'tag':
-				$rule['value'] = isset( $_POST['tag_id'] ) ? intval( $_POST['tag_id'] ) : 0;
-				break;
-		}
+		// Build rule from the cascading selector data.
+		$rule = $this->build_rule_from_request( $rule_type, $theme );
 
 		if ( empty( $rule['value'] ) ) {
 			wp_send_json_error( __( 'Please select or enter a valid value', 'osom-multi-theme-switcher' ) );
@@ -138,6 +92,7 @@ class OMTS_Ajax_Handler {
 				'rule'           => $rule,
 				'index'          => count( $rules ) - 1,
 				'target_display' => $this->get_rule_target_display( $rule ),
+				'type_display'   => $this->get_rule_type_display( $rule['type'] ),
 				'theme_name'     => $this->theme_switcher->get_theme_name( $theme ),
 			)
 		);
@@ -200,6 +155,328 @@ class OMTS_Ajax_Handler {
 	}
 
 	/**
+	 * Build rule array from the cascading selector request data.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $rule_type Rule type from the form.
+	 * @param string $theme     Theme slug.
+	 * @return array Rule array.
+	 */
+	private function build_rule_from_request( $rule_type, $theme ) {
+		$rule = array(
+			'type'  => $rule_type,
+			'theme' => $theme,
+		);
+
+		switch ( $rule_type ) {
+			case 'page':
+			case 'post':
+				$item_id = isset( $_POST['item_id'] ) ? intval( $_POST['item_id'] ) : 0;
+				if ( $item_id ) {
+					$post = get_post( $item_id );
+					if ( $post ) {
+						$status = $post->post_status;
+						if ( 'publish' !== $status ) {
+							$status_map = array(
+								'draft'   => 'draft_',
+								'pending' => 'pending_',
+								'private' => 'private_',
+								'future'  => 'future_',
+							);
+							if ( isset( $status_map[ $status ] ) ) {
+								$rule['type'] = $status_map[ $status ] . $rule_type;
+							}
+						}
+					}
+				}
+				$rule['value'] = $item_id;
+				break;
+
+			case 'custom_post_type':
+				$object_type = isset( $_POST['object_type'] ) ? sanitize_text_field( wp_unslash( $_POST['object_type'] ) ) : '';
+				$item_id     = isset( $_POST['item_id'] ) ? sanitize_text_field( wp_unslash( $_POST['item_id'] ) ) : '';
+
+				if ( '__all__' === $item_id ) {
+					// "All" option — store as post_type rule.
+					$rule['type']  = 'post_type';
+					$rule['value'] = $object_type;
+
+					// Store URL slugs for early matching (before CPT is registered).
+					$pt_obj = get_post_type_object( $object_type );
+					if ( $pt_obj ) {
+						if ( $pt_obj->has_archive ) {
+							$rule['archive_slug'] = true === $pt_obj->has_archive ? $object_type : $pt_obj->has_archive;
+						}
+						if ( isset( $pt_obj->rewrite['slug'] ) ) {
+							$rule['rewrite_slug'] = $pt_obj->rewrite['slug'];
+						}
+					}
+				} else {
+					// Individual CPT item.
+					$item_id = intval( $item_id );
+					$post    = get_post( $item_id );
+					if ( $post && 'publish' === $post->post_status ) {
+						$rule['type'] = 'cpt_item';
+					} elseif ( $post ) {
+						$status_map   = array(
+							'draft'   => 'draft_cpt_item',
+							'pending' => 'pending_cpt_item',
+							'private' => 'private_cpt_item',
+							'future'  => 'future_cpt_item',
+						);
+						$rule['type'] = isset( $status_map[ $post->post_status ] ) ? $status_map[ $post->post_status ] : 'cpt_item';
+					} else {
+						$rule['type'] = 'cpt_item';
+					}
+					$rule['value']     = $item_id;
+					$rule['post_type'] = $object_type;
+				}
+				break;
+
+			case 'taxonomy':
+				$object_type = isset( $_POST['object_type'] ) ? sanitize_text_field( wp_unslash( $_POST['object_type'] ) ) : '';
+				$item_id     = isset( $_POST['item_id'] ) ? intval( $_POST['item_id'] ) : 0;
+
+				if ( 'category' === $object_type ) {
+					$rule['type'] = 'category';
+				} elseif ( 'post_tag' === $object_type ) {
+					$rule['type'] = 'tag';
+				} else {
+					$rule['type']     = 'taxonomy';
+					$rule['taxonomy'] = $object_type;
+				}
+				$rule['value'] = $item_id;
+				break;
+
+			case 'url':
+				$rule['value'] = isset( $_POST['custom_url'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_url'] ) ) : '';
+				break;
+
+			default:
+				$rule['value'] = '';
+				break;
+		}
+
+		return $rule;
+	}
+
+	/**
+	 * Get human-readable display name for rule type.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $type Rule type.
+	 * @return string Display name.
+	 */
+	private function get_rule_type_display( $type ) {
+		$type_map = array(
+			'page'             => __( 'Page', 'osom-multi-theme-switcher' ),
+			'post'             => __( 'Post', 'osom-multi-theme-switcher' ),
+			'post_type'        => __( 'Custom Post Type', 'osom-multi-theme-switcher' ),
+			'url'              => __( 'Custom URL', 'osom-multi-theme-switcher' ),
+			'category'         => __( 'Category', 'osom-multi-theme-switcher' ),
+			'tag'              => __( 'Tag', 'osom-multi-theme-switcher' ),
+			'taxonomy'         => __( 'Taxonomy', 'osom-multi-theme-switcher' ),
+			'cpt_item'         => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+			'draft_page'       => __( 'Page', 'osom-multi-theme-switcher' ),
+			'draft_post'       => __( 'Post', 'osom-multi-theme-switcher' ),
+			'pending_page'     => __( 'Page', 'osom-multi-theme-switcher' ),
+			'pending_post'     => __( 'Post', 'osom-multi-theme-switcher' ),
+			'private_page'     => __( 'Page', 'osom-multi-theme-switcher' ),
+			'private_post'     => __( 'Post', 'osom-multi-theme-switcher' ),
+			'future_page'      => __( 'Page', 'osom-multi-theme-switcher' ),
+			'future_post'      => __( 'Post', 'osom-multi-theme-switcher' ),
+			'draft_cpt_item'   => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+			'pending_cpt_item' => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+			'private_cpt_item' => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+			'future_cpt_item'  => __( 'CPT Item', 'osom-multi-theme-switcher' ),
+		);
+
+		return isset( $type_map[ $type ] ) ? $type_map[ $type ] : ucfirst( str_replace( '_', ' ', $type ) );
+	}
+
+	/**
+	 * AJAX handler: Get rule objects for cascading selector.
+	 *
+	 * @since 1.2.0
+	 */
+	public function ajax_get_rule_objects() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$rule_type = isset( $_POST['rule_type'] ) ? sanitize_text_field( wp_unslash( $_POST['rule_type'] ) ) : '';
+		$objects   = array();
+
+		switch ( $rule_type ) {
+			case 'custom_post_type':
+				$post_types = get_post_types( array( 'public' => true ), 'objects' );
+				foreach ( $post_types as $pt ) {
+					if ( in_array( $pt->name, array( 'page', 'post', 'attachment' ), true ) ) {
+						continue;
+					}
+					$objects[] = array(
+						'value' => $pt->name,
+						'label' => $pt->label,
+					);
+				}
+				break;
+
+			case 'taxonomy':
+				$taxonomies = get_taxonomies( array( 'public' => true ), 'objects' );
+				foreach ( $taxonomies as $tax ) {
+					$objects[] = array(
+						'value' => $tax->name,
+						'label' => $tax->label,
+					);
+				}
+				break;
+		}
+
+		wp_send_json_success( array( 'objects' => $objects ) );
+	}
+
+	/**
+	 * AJAX handler: Get rule items for cascading selector.
+	 *
+	 * @since 1.2.0
+	 */
+	public function ajax_get_rule_items() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$rule_type   = isset( $_POST['rule_type'] ) ? sanitize_text_field( wp_unslash( $_POST['rule_type'] ) ) : '';
+		$object_type = isset( $_POST['object_type'] ) ? sanitize_text_field( wp_unslash( $_POST['object_type'] ) ) : '';
+		$items       = array();
+
+		$all_statuses  = array( 'publish', 'draft', 'pending', 'private', 'future' );
+		$status_labels = array(
+			'draft'   => __( 'Draft', 'osom-multi-theme-switcher' ),
+			'pending' => __( 'Pending', 'osom-multi-theme-switcher' ),
+			'private' => __( 'Private', 'osom-multi-theme-switcher' ),
+			'future'  => __( 'Scheduled', 'osom-multi-theme-switcher' ),
+		);
+
+		switch ( $rule_type ) {
+			case 'page':
+				$pages = get_posts(
+					array(
+						'post_type'   => 'page',
+						'post_status' => $all_statuses,
+						'numberposts' => -1,
+						'orderby'     => 'title',
+						'order'       => 'ASC',
+					)
+				);
+				foreach ( $pages as $page ) {
+					$label = $page->post_title;
+					if ( 'publish' !== $page->post_status && isset( $status_labels[ $page->post_status ] ) ) {
+						$label = '(' . $status_labels[ $page->post_status ] . ') ' . $label;
+					}
+					$items[] = array(
+						'value' => $page->ID,
+						'label' => $label,
+					);
+				}
+				break;
+
+			case 'post':
+				$posts = get_posts(
+					array(
+						'post_type'   => 'post',
+						'post_status' => $all_statuses,
+						'numberposts' => -1,
+						'orderby'     => 'title',
+						'order'       => 'ASC',
+					)
+				);
+				foreach ( $posts as $post ) {
+					$label = $post->post_title;
+					if ( 'publish' !== $post->post_status && isset( $status_labels[ $post->post_status ] ) ) {
+						$label = '(' . $status_labels[ $post->post_status ] . ') ' . $label;
+					}
+					$items[] = array(
+						'value' => $post->ID,
+						'label' => $label,
+					);
+				}
+				break;
+
+			case 'custom_post_type':
+				if ( empty( $object_type ) ) {
+					break;
+				}
+
+				$post_type_obj = get_post_type_object( $object_type );
+				$all_label     = $post_type_obj
+					? sprintf(
+						/* translators: %s: Post type label */
+						__( 'All %s', 'osom-multi-theme-switcher' ),
+						$post_type_obj->label
+					)
+					: __( 'All', 'osom-multi-theme-switcher' );
+
+				$items[] = array(
+					'value' => '__all__',
+					'label' => $all_label,
+				);
+
+				$posts = get_posts(
+					array(
+						'post_type'   => $object_type,
+						'post_status' => $all_statuses,
+						'numberposts' => -1,
+						'orderby'     => 'title',
+						'order'       => 'ASC',
+					)
+				);
+				foreach ( $posts as $post ) {
+					$label = $post->post_title;
+					if ( 'publish' !== $post->post_status && isset( $status_labels[ $post->post_status ] ) ) {
+						$label = '(' . $status_labels[ $post->post_status ] . ') ' . $label;
+					}
+					$items[] = array(
+						'value' => $post->ID,
+						'label' => $label,
+					);
+				}
+				break;
+
+			case 'taxonomy':
+				if ( empty( $object_type ) ) {
+					break;
+				}
+
+				$terms = get_terms(
+					array(
+						'taxonomy'   => $object_type,
+						'hide_empty' => false,
+						'orderby'    => 'name',
+						'order'      => 'ASC',
+					)
+				);
+
+				if ( ! is_wp_error( $terms ) ) {
+					foreach ( $terms as $term ) {
+						$items[] = array(
+							'value' => $term->term_id,
+							'label' => $term->name,
+						);
+					}
+				}
+				break;
+		}
+
+		wp_send_json_success( array( 'items' => $items ) );
+	}
+
+	/**
 	 * Get display name for rule target.
 	 *
 	 * @since 1.0.0
@@ -227,7 +504,13 @@ class OMTS_Ajax_Handler {
 
 			case 'post_type':
 				$post_type_obj = get_post_type_object( $rule['value'] );
-				return $post_type_obj ? $post_type_obj->label : $rule['value'];
+				return $post_type_obj
+					? sprintf(
+						/* translators: %s: Post type label */
+						__( 'All %s', 'osom-multi-theme-switcher' ),
+						$post_type_obj->label
+					)
+					: $rule['value'];
 
 			case 'url':
 				return $rule['value'];
@@ -240,67 +523,61 @@ class OMTS_Ajax_Handler {
 				$tag = get_tag( $rule['value'] );
 				return $tag ? $tag->name : __( 'Unknown Tag', 'osom-multi-theme-switcher' );
 
-			case 'draft_page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title . ' (Draft)' : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Draft Page (ID: %d)', 'osom-multi-theme-switcher' ),
+			case 'taxonomy':
+				$taxonomy = isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : '';
+				$term     = get_term( $rule['value'], $taxonomy );
+				if ( $term && ! is_wp_error( $term ) ) {
+					$tax_obj   = get_taxonomy( $taxonomy );
+					$tax_label = $tax_obj ? $tax_obj->label : $taxonomy;
+					return $term->name . ' (' . $tax_label . ')';
+				}
+				return __( 'Unknown Term', 'osom-multi-theme-switcher' );
+
+			case 'cpt_item':
+				$post = get_post( $rule['value'] );
+				return $post ? $post->post_title : sprintf(
+					/* translators: %d: Post ID */
+					__( 'Unknown Item (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
+			case 'draft_page':
 			case 'draft_post':
+			case 'draft_cpt_item':
 				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title . ' (Draft)' : sprintf(
+				return $post ? '(Draft) ' . $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Draft Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					__( 'Unknown Draft (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
 			case 'pending_page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title . ' (Pending)' : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Pending Page (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
 			case 'pending_post':
+			case 'pending_cpt_item':
 				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title . ' (Pending)' : sprintf(
+				return $post ? '(Pending) ' . $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Pending Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					__( 'Unknown Pending (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
 			case 'private_page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title . ' (Private)' : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Private Page (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
 			case 'private_post':
+			case 'private_cpt_item':
 				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title . ' (Private)' : sprintf(
+				return $post ? '(Private) ' . $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Private Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					__( 'Unknown Private (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
 			case 'future_page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title . ' (Scheduled)' : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Scheduled Page (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
 			case 'future_post':
+			case 'future_cpt_item':
 				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title . ' (Scheduled)' : sprintf(
+				return $post ? '(Scheduled) ' . $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Scheduled Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					__( 'Unknown Scheduled (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
@@ -350,7 +627,7 @@ class OMTS_Ajax_Handler {
 			foreach ( $prefixes as $index => $mapping ) {
 				if ( isset( $mapping['theme'] ) && $mapping['theme'] === $theme ) {
 					$prefixes[ $index ]['prefix'] = $prefix;
-					$found                         = true;
+					$found                        = true;
 					break;
 				}
 			}

@@ -35,6 +35,13 @@ class OMTS_Theme_Switcher {
 	private $rest_prefix_option_name = 'omts_theme_rest_prefixes';
 
 	/**
+	 * Option name for storing per-theme CPT/taxonomy registry.
+	 *
+	 * @var string
+	 */
+	private $theme_registry_option = 'omts_theme_object_registry';
+
+	/**
 	 * Flag to prevent recursion in filter_rest_url_prefix.
 	 *
 	 * @var bool
@@ -56,6 +63,8 @@ class OMTS_Theme_Switcher {
 		add_filter( 'pre_option_stylesheet', array( $this, 'switch_theme_stylesheet' ) );
 		add_filter( 'rest_url_prefix', array( $this, 'filter_rest_url_prefix' ) );
 		add_action( 'init', array( $this, 'add_custom_rest_rewrite_rules' ), 1 );
+		add_action( 'init', array( $this, 'reregister_missing_cpts' ), 998 );
+		add_action( 'init', array( $this, 'capture_theme_objects' ), 999 );
 		add_filter( 'rest_pre_dispatch', array( $this, 'set_rest_theme_early' ), 1, 3 );
 	}
 
@@ -74,13 +83,26 @@ class OMTS_Theme_Switcher {
 			return;
 		}
 
-		add_filter( 'option_template', function() use ( $theme ) {
-			return $theme;
-		}, 1 );
+		$theme_obj = wp_get_theme( $theme );
+		if ( ! $theme_obj->exists() ) {
+			return;
+		}
 
-		add_filter( 'option_stylesheet', function() use ( $theme ) {
-			return $theme;
-		}, 1 );
+		add_filter(
+			'option_template',
+			function() use ( $theme ) {
+				return $theme;
+			},
+			1
+		);
+
+		add_filter(
+			'option_stylesheet',
+			function() use ( $theme ) {
+				return $theme;
+			},
+			1
+		);
 	}
 
 	/**
@@ -93,6 +115,14 @@ class OMTS_Theme_Switcher {
 	 */
 	public function switch_theme_template( $template ) {
 		$theme = $this->get_theme_for_current_request();
+
+		if ( $theme ) {
+			$theme_obj = wp_get_theme( $theme );
+			if ( ! $theme_obj->exists() ) {
+				return $template;
+			}
+		}
+
 		return $theme ? $theme : $template;
 	}
 
@@ -106,6 +136,14 @@ class OMTS_Theme_Switcher {
 	 */
 	public function switch_theme_stylesheet( $stylesheet ) {
 		$theme = $this->get_theme_for_current_request();
+
+		if ( $theme ) {
+			$theme_obj = wp_get_theme( $theme );
+			if ( ! $theme_obj->exists() ) {
+				return $stylesheet;
+			}
+		}
+
 		return $theme ? $theme : $stylesheet;
 	}
 
@@ -227,6 +265,30 @@ class OMTS_Theme_Switcher {
 	}
 
 	/**
+	 * Check if the WordPress query has run and conditional tags are available.
+	 *
+	 * Conditional query tags like is_page(), is_single(), etc. only work
+	 * after the main query has been parsed.
+	 *
+	 * @since 1.0.4
+	 *
+	 * @return bool Whether conditional query tags can be used.
+	 */
+	private function is_query_ready() {
+		global $wp_query;
+
+		if ( did_action( 'wp' ) ) {
+			return true;
+		}
+
+		if ( isset( $wp_query ) && $wp_query instanceof WP_Query && ! empty( $wp_query->query ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Check if a rule matches the current request.
 	 *
 	 * @since 1.0.0
@@ -236,6 +298,10 @@ class OMTS_Theme_Switcher {
 	 * @return bool Whether rule matches.
 	 */
 	private function rule_matches( $rule, $early = false ) {
+		if ( ! $early && ! $this->is_query_ready() ) {
+			$early = true;
+		}
+
 		// If called early, we can only check URL-based rules
 		if ( $early ) {
 			if ( 'url' === $rule['type'] ) {
@@ -275,6 +341,34 @@ class OMTS_Theme_Switcher {
 			if ( 'future_post' === $rule['type'] ) {
 				return $this->match_future_post_early( $rule['value'] );
 			}
+			if ( 'cpt_item' === $rule['type'] ) {
+				return $this->match_cpt_item_early( $rule['value'], 'publish' );
+			}
+			if ( 'draft_cpt_item' === $rule['type'] ) {
+				return $this->match_cpt_item_early( $rule['value'], 'draft' );
+			}
+			if ( 'pending_cpt_item' === $rule['type'] ) {
+				return $this->match_cpt_item_early( $rule['value'], 'pending' );
+			}
+			if ( 'private_cpt_item' === $rule['type'] ) {
+				return $this->match_cpt_item_early( $rule['value'], 'private' );
+			}
+			if ( 'future_cpt_item' === $rule['type'] ) {
+				return $this->match_cpt_item_early( $rule['value'], 'future' );
+			}
+			if ( 'category' === $rule['type'] ) {
+				return $this->match_category_early( $rule['value'] );
+			}
+			if ( 'tag' === $rule['type'] ) {
+				return $this->match_tag_early( $rule['value'] );
+			}
+			if ( 'taxonomy' === $rule['type'] ) {
+				$taxonomy = isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : '';
+				return $taxonomy ? $this->match_taxonomy_early( $rule['value'], $taxonomy ) : false;
+			}
+			if ( 'post_type' === $rule['type'] ) {
+				return $this->match_post_type_early( $rule );
+			}
 			return false;
 		}
 
@@ -300,6 +394,13 @@ class OMTS_Theme_Switcher {
 			case 'tag':
 				return is_tag( $rule['value'] ) || ( is_single() && has_tag( $rule['value'] ) );
 
+			case 'taxonomy':
+				$taxonomy = isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : '';
+				if ( ! $taxonomy ) {
+					return false;
+				}
+				return is_tax( $taxonomy, $rule['value'] ) || ( is_singular() && has_term( $rule['value'], $taxonomy ) );
+
 			case 'draft_page':
 			case 'pending_page':
 			case 'private_page':
@@ -315,6 +416,16 @@ class OMTS_Theme_Switcher {
 				// For draft/pending/private/future posts, check if viewing that specific post.
 				$post = get_post( $rule['value'] );
 				return $post && is_single( $rule['value'] );
+
+			case 'cpt_item':
+				return is_singular() && get_queried_object_id() === absint( $rule['value'] );
+
+			case 'draft_cpt_item':
+			case 'pending_cpt_item':
+			case 'private_cpt_item':
+			case 'future_cpt_item':
+				$post = get_post( $rule['value'] );
+				return $post && is_singular() && get_queried_object_id() === absint( $rule['value'] );
 
 			default:
 				return false;
@@ -525,7 +636,7 @@ class OMTS_Theme_Switcher {
 	 * @return string|false Theme slug or false.
 	 */
 	private function get_theme_by_rest_prefix() {
-		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$request_uri     = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		$prefix_mappings = $this->get_theme_rest_prefixes();
 
 		if ( empty( $prefix_mappings ) ) {
@@ -687,7 +798,7 @@ class OMTS_Theme_Switcher {
 				return true;
 			}
 
-			$post    = $wpdb->get_row(
+			$post = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT post_name, post_parent FROM {$wpdb->posts} WHERE ID = %d AND post_type = 'page' AND post_status = 'publish'",
 					$page_id
@@ -1154,7 +1265,250 @@ class OMTS_Theme_Switcher {
 	}
 
 	/**
-	 * Match preview post against URL rules.
+	 * Match category rule early by checking URL against category base.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int $term_id Category term ID.
+	 * @return bool Whether current URL matches the category.
+	 */
+	private function match_category_early( $term_id ) {
+		global $wpdb;
+
+		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+			return false;
+		}
+
+		$term_id = absint( $term_id );
+		$term    = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT t.slug FROM {$wpdb->terms} t
+				INNER JOIN {$wpdb->term_taxonomy} tt ON t.term_id = tt.term_id
+				WHERE t.term_id = %d AND tt.taxonomy = 'category'",
+				$term_id
+			)
+		);
+
+		if ( ! $term ) {
+			return false;
+		}
+
+		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
+		$path          = trim( $request_uri, '/' );
+
+		$category_base = get_option( 'category_base' );
+		if ( empty( $category_base ) ) {
+			$category_base = 'category';
+		}
+
+		// Check if URL matches pattern: {category_base}/{slug}
+		$expected_path = trim( $category_base, '/' ) . '/' . $term->slug;
+
+		return $path === $expected_path || 0 === strpos( $path, $expected_path . '/' );
+	}
+
+	/**
+	 * Match tag rule early by checking URL against tag base.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int $term_id Tag term ID.
+	 * @return bool Whether current URL matches the tag.
+	 */
+	private function match_tag_early( $term_id ) {
+		global $wpdb;
+
+		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+			return false;
+		}
+
+		$term_id = absint( $term_id );
+		$term    = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT t.slug FROM {$wpdb->terms} t
+				INNER JOIN {$wpdb->term_taxonomy} tt ON t.term_id = tt.term_id
+				WHERE t.term_id = %d AND tt.taxonomy = 'post_tag'",
+				$term_id
+			)
+		);
+
+		if ( ! $term ) {
+			return false;
+		}
+
+		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
+		$path          = trim( $request_uri, '/' );
+
+		$tag_base = get_option( 'tag_base' );
+		if ( empty( $tag_base ) ) {
+			$tag_base = 'tag';
+		}
+
+		// Check if URL matches pattern: {tag_base}/{slug}
+		$expected_path = trim( $tag_base, '/' ) . '/' . $term->slug;
+
+		return $path === $expected_path || 0 === strpos( $path, $expected_path . '/' );
+	}
+
+	/**
+	 * Match custom taxonomy rule early by checking URL against taxonomy rewrite slug.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int    $term_id  Term ID.
+	 * @param string $taxonomy Taxonomy name.
+	 * @return bool Whether current URL matches the taxonomy term.
+	 */
+	private function match_taxonomy_early( $term_id, $taxonomy ) {
+		global $wpdb;
+
+		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+			return false;
+		}
+
+		$term_id = absint( $term_id );
+		$term    = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT t.slug FROM {$wpdb->terms} t
+				INNER JOIN {$wpdb->term_taxonomy} tt ON t.term_id = tt.term_id
+				WHERE t.term_id = %d AND tt.taxonomy = %s",
+				$term_id,
+				$taxonomy
+			)
+		);
+
+		if ( ! $term ) {
+			return false;
+		}
+
+		$tax_obj = get_taxonomy( $taxonomy );
+		if ( ! $tax_obj || ! isset( $tax_obj->rewrite['slug'] ) ) {
+			return false;
+		}
+
+		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
+		$path          = trim( $request_uri, '/' );
+
+		$rewrite_slug  = trim( $tax_obj->rewrite['slug'], '/' );
+		$expected_path = $rewrite_slug . '/' . $term->slug;
+
+		return $path === $expected_path || 0 === strpos( $path, $expected_path . '/' );
+	}
+
+	/**
+	 * Match post type rule early by checking URL against stored slugs.
+	 *
+	 * Uses slugs stored in the rule at save time, because CPTs may not be
+	 * registered yet during setup_theme hook.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $rule Rule array with optional archive_slug and rewrite_slug.
+	 * @return bool Whether current URL matches the post type.
+	 */
+	private function match_post_type_early( $rule ) {
+		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+			return false;
+		}
+
+		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
+		$path          = trim( $request_uri, '/' );
+
+		// First try stored slugs (works even before CPT is registered).
+		if ( ! empty( $rule['archive_slug'] ) ) {
+			$archive_slug = trim( $rule['archive_slug'], '/' );
+			if ( $path === $archive_slug || 0 === strpos( $path, $archive_slug . '/' ) ) {
+				return true;
+			}
+		}
+
+		if ( ! empty( $rule['rewrite_slug'] ) ) {
+			$rewrite_slug = trim( $rule['rewrite_slug'], '/' );
+			if ( 0 === strpos( $path, $rewrite_slug . '/' ) ) {
+				return true;
+			}
+		}
+
+		// Fallback: try get_post_type_object if available (e.g., late calls).
+		$post_type     = $rule['value'];
+		$post_type_obj = get_post_type_object( $post_type );
+		if ( $post_type_obj ) {
+			if ( $post_type_obj->has_archive ) {
+				$archive_slug = true === $post_type_obj->has_archive ? $post_type : $post_type_obj->has_archive;
+				$archive_slug = trim( $archive_slug, '/' );
+				if ( $path === $archive_slug || 0 === strpos( $path, $archive_slug . '/' ) ) {
+					return true;
+				}
+			}
+			if ( isset( $post_type_obj->rewrite['slug'] ) ) {
+				$rewrite_slug = trim( $post_type_obj->rewrite['slug'], '/' );
+				if ( 0 === strpos( $path, $rewrite_slug . '/' ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Match CPT item rule early by querying database directly.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param int    $post_id     Post ID.
+	 * @param string $post_status Expected post status.
+	 * @return bool Whether current URL matches the CPT item.
+	 */
+	private function match_cpt_item_early( $post_id, $post_status = 'publish' ) {
+		global $wpdb;
+
+		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+			return false;
+		}
+
+		$post_id = absint( $post_id );
+		$post    = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT post_name, post_type, post_status FROM {$wpdb->posts} WHERE ID = %d AND post_status = %s",
+				$post_id,
+				$post_status
+			)
+		);
+
+		if ( ! $post ) {
+			return false;
+		}
+
+		// Skip built-in page/post types — they have their own matchers.
+		if ( in_array( $post->post_type, array( 'page', 'post' ), true ) ) {
+			return false;
+		}
+
+		$slug          = $post->post_name;
+		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
+		$path          = trim( $request_uri, '/' );
+		$path_segments = explode( '/', $path );
+
+		foreach ( $path_segments as $segment ) {
+			if ( $segment === $slug ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Match preview post against rules.
+	 *
+	 * Checks for page/post ID rules, status-based rules (draft_page, etc.),
+	 * and URL rules.
 	 *
 	 * @since 1.0.3
 	 *
@@ -1171,7 +1525,7 @@ class OMTS_Theme_Switcher {
 		global $wpdb;
 		$post = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT post_name, post_parent, post_type FROM {$wpdb->posts} WHERE ID = %d",
+				"SELECT post_name, post_parent, post_type, post_status FROM {$wpdb->posts} WHERE ID = %d",
 				$post_id
 			)
 		);
@@ -1180,6 +1534,31 @@ class OMTS_Theme_Switcher {
 			return false;
 		}
 
+		// First, check for direct page/post ID rules and status-based rules.
+		foreach ( $rules as $rule ) {
+			// Check for direct page rule (page type with matching ID).
+			if ( 'page' === $rule['type'] && 'page' === $post->post_type && absint( $rule['value'] ) === $post_id ) {
+				return $rule['theme'];
+			}
+
+			// Check for direct post rule (post type with matching ID).
+			if ( 'post' === $rule['type'] && 'post' === $post->post_type && absint( $rule['value'] ) === $post_id ) {
+				return $rule['theme'];
+			}
+
+			// Check for status-based rules (draft_page, pending_page, private_page, future_page, etc.).
+			$status_type = $post->post_status . '_' . $post->post_type;
+			if ( $rule['type'] === $status_type && absint( $rule['value'] ) === $post_id ) {
+				return $rule['theme'];
+			}
+
+			// Check for CPT item rules.
+			if ( in_array( $rule['type'], array( 'cpt_item', 'draft_cpt_item', 'pending_cpt_item', 'private_cpt_item', 'future_cpt_item' ), true ) && absint( $rule['value'] ) === $post_id ) {
+				return $rule['theme'];
+			}
+		}
+
+		// Then, check URL rules.
 		if ( 'page' === $post->post_type ) {
 			return $this->match_page_preview_against_rules( $post, $rules, $wpdb );
 		} elseif ( 'post' === $post->post_type ) {
@@ -1237,12 +1616,12 @@ class OMTS_Theme_Switcher {
 	 * @return string|false Theme slug or false if no match.
 	 */
 	private function match_post_preview_against_rules( $post, $rules ) {
-		$post_path = $post->post_name;
+		$post_path            = $post->post_name;
 		$post_path_normalized = trim( $post_path, '/' );
 
 		foreach ( $rules as $rule ) {
 			if ( 'url' === $rule['type'] ) {
-				$rule_url = trim( $rule['value'], '/' );
+				$rule_url          = trim( $rule['value'], '/' );
 				$rule_url_segments = explode( '/', $rule_url );
 
 				// Check for exact full path match
@@ -1257,6 +1636,201 @@ class OMTS_Theme_Switcher {
 			}
 		}
 
+		return false;
+	}
+
+	/**
+	 * Capture registered CPTs and taxonomies for the currently active theme.
+	 *
+	 * Runs on `init` at priority 999 (after all CPTs/taxonomies are registered).
+	 * Stores full registration args so CPTs can be re-registered when a different
+	 * theme is active.
+	 *
+	 * @since 1.2.0
+	 */
+	public function capture_theme_objects() {
+		// Determine the "source" theme — the default (non-switched) theme.
+		// We only want to capture CPTs from the original default theme,
+		// not from a theme that was switched to via our plugin rules.
+		$default_theme = get_option( 'stylesheet' );
+		$registry      = get_option( $this->theme_registry_option, array() );
+
+		// Collect public CPTs (excluding built-in page/post/attachment).
+		$post_types = get_post_types( array( 'public' => true ), 'objects' );
+		$cpt_data   = array();
+		foreach ( $post_types as $pt ) {
+			if ( in_array( $pt->name, array( 'page', 'post', 'attachment' ), true ) ) {
+				continue;
+			}
+			// Store args needed to re-register this CPT.
+			$cpt_data[ $pt->name ] = array(
+				'label'        => $pt->label,
+				'labels'       => (array) $pt->labels,
+				'public'       => $pt->public,
+				'has_archive'  => $pt->has_archive,
+				'rewrite'      => $pt->rewrite,
+				'supports'     => get_all_post_type_supports( $pt->name ),
+				'menu_icon'    => $pt->menu_icon,
+				'show_in_rest' => $pt->show_in_rest,
+				'rest_base'    => $pt->rest_base,
+				'taxonomies'   => get_object_taxonomies( $pt->name ),
+			);
+		}
+
+		// Collect public taxonomies with registration args.
+		$taxonomies = get_taxonomies( array( 'public' => true ), 'objects' );
+		$tax_data   = array();
+		foreach ( $taxonomies as $tax ) {
+			if ( in_array( $tax->name, array( 'category', 'post_tag', 'post_format' ), true ) ) {
+				continue;
+			}
+			$tax_data[ $tax->name ] = array(
+				'label'        => $tax->label,
+				'labels'       => (array) $tax->labels,
+				'public'       => $tax->public,
+				'hierarchical' => $tax->hierarchical,
+				'rewrite'      => $tax->rewrite,
+				'show_in_rest' => $tax->show_in_rest,
+				'rest_base'    => $tax->rest_base,
+				'object_type'  => $tax->object_type,
+			);
+		}
+
+		$new_entry = array(
+			'post_types' => $cpt_data,
+			'taxonomies' => $tax_data,
+		);
+
+		// Only update if data changed to avoid unnecessary DB writes.
+		if ( ! isset( $registry[ $default_theme ] ) || $registry[ $default_theme ] !== $new_entry ) {
+			$registry[ $default_theme ] = $new_entry;
+			update_option( $this->theme_registry_option, $registry, false );
+		}
+	}
+
+	/**
+	 * Re-register CPTs and taxonomies that are missing in the current theme
+	 * but are referenced by switching rules.
+	 *
+	 * Runs on `init` at priority 998, just before capture (999).
+	 * This ensures that when an alternative theme is active (via our rules),
+	 * CPTs from the original theme are still available so WordPress can
+	 * parse URLs and serve content correctly.
+	 *
+	 * @since 1.2.0
+	 */
+	public function reregister_missing_cpts() {
+		$registry = get_option( $this->theme_registry_option, array() );
+
+		if ( empty( $registry ) ) {
+			return;
+		}
+
+		// Collect all CPT slugs and taxonomy slugs referenced in rules.
+		$rules        = $this->get_rules();
+		$needed_cpts  = array();
+		$needed_taxes = array();
+
+		foreach ( $rules as $rule ) {
+			if ( 'post_type' === $rule['type'] ) {
+				$needed_cpts[ $rule['value'] ] = true;
+			}
+			if ( in_array( $rule['type'], array( 'cpt_item', 'draft_cpt_item', 'pending_cpt_item', 'private_cpt_item', 'future_cpt_item' ), true ) ) {
+				if ( ! empty( $rule['post_type'] ) ) {
+					$needed_cpts[ $rule['post_type'] ] = true;
+				}
+			}
+			if ( 'taxonomy' === $rule['type'] && ! empty( $rule['taxonomy'] ) ) {
+				$needed_taxes[ $rule['taxonomy'] ] = true;
+			}
+		}
+
+		if ( empty( $needed_cpts ) && empty( $needed_taxes ) ) {
+			return;
+		}
+
+		// Find CPT/taxonomy args from any theme in the registry.
+		foreach ( $needed_cpts as $cpt_slug => $_ ) {
+			if ( post_type_exists( $cpt_slug ) ) {
+				continue;
+			}
+
+			// Search all themes in registry for this CPT's args.
+			$args = $this->find_cpt_args_in_registry( $cpt_slug, $registry );
+			if ( $args ) {
+				register_post_type( $cpt_slug, $args );
+			}
+		}
+
+		foreach ( $needed_taxes as $tax_slug => $_ ) {
+			if ( taxonomy_exists( $tax_slug ) ) {
+				continue;
+			}
+
+			$tax_info = $this->find_taxonomy_args_in_registry( $tax_slug, $registry );
+			if ( $tax_info ) {
+				register_taxonomy( $tax_slug, $tax_info['object_type'], $tax_info['args'] );
+			}
+		}
+	}
+
+	/**
+	 * Find CPT registration args from any theme in the registry.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $cpt_slug CPT slug to find.
+	 * @param array  $registry Full theme object registry.
+	 * @return array|false Registration args or false if not found.
+	 */
+	private function find_cpt_args_in_registry( $cpt_slug, $registry ) {
+		foreach ( $registry as $theme_data ) {
+			if ( isset( $theme_data['post_types'][ $cpt_slug ] ) ) {
+				$stored = $theme_data['post_types'][ $cpt_slug ];
+				return array(
+					'label'        => $stored['label'],
+					'labels'       => $stored['labels'],
+					'public'       => $stored['public'],
+					'has_archive'  => $stored['has_archive'],
+					'rewrite'      => $stored['rewrite'],
+					'supports'     => array_keys( array_filter( $stored['supports'] ) ),
+					'menu_icon'    => $stored['menu_icon'],
+					'show_in_rest' => $stored['show_in_rest'],
+					'rest_base'    => $stored['rest_base'],
+					'taxonomies'   => $stored['taxonomies'],
+				);
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Find taxonomy registration args from any theme in the registry.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $tax_slug Taxonomy slug to find.
+	 * @param array  $registry Full theme object registry.
+	 * @return array|false Array with 'object_type' and 'args' keys, or false if not found.
+	 */
+	private function find_taxonomy_args_in_registry( $tax_slug, $registry ) {
+		foreach ( $registry as $theme_data ) {
+			if ( isset( $theme_data['taxonomies'][ $tax_slug ] ) ) {
+				$stored = $theme_data['taxonomies'][ $tax_slug ];
+				return array(
+					'object_type' => $stored['object_type'],
+					'args'        => array(
+						'label'        => $stored['label'],
+						'labels'       => $stored['labels'],
+						'public'       => $stored['public'],
+						'hierarchical' => $stored['hierarchical'],
+						'rewrite'      => $stored['rewrite'],
+						'show_in_rest' => $stored['show_in_rest'],
+						'rest_base'    => $stored['rest_base'],
+					),
+				);
+			}
+		}
 		return false;
 	}
 }
