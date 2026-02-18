@@ -66,6 +66,14 @@
     pointer-events: none;
 }
 
+/* Inline spinner next to selects */
+#omts-object-spinner,
+#omts-item-spinner {
+    float: none;
+    vertical-align: middle;
+    margin-top: 0;
+}
+
 /* Success message */
 .omts-success-message {
     display: inline-block;

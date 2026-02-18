@@ -72,14 +72,14 @@ class OMTS_Admin_Page {
 			'omts-admin-css',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-style.css',
 			array(),
-			'1.0.0'
+			'1.2.0'
 		);
 
 		wp_enqueue_script(
 			'omts-admin-js',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-script.js',
 			array( 'jquery' ),
-			'1.0.0',
+			'1.2.0',
 			true
 		);
 
@@ -99,10 +99,9 @@ class OMTS_Admin_Page {
 	 * @since 1.0.0
 	 */
 	public function render_admin_page() {
-		$rules          = $this->theme_switcher->get_rules();
-		$rest_prefixes  = $this->theme_switcher->get_theme_rest_prefixes();
-		$themes         = wp_get_themes();
-		$current_theme  = wp_get_theme()->get_stylesheet();
+		$rules         = $this->theme_switcher->get_rules();
+		$rest_prefixes = $this->theme_switcher->get_theme_rest_prefixes();
+		$themes        = wp_get_themes();
 		?>
 		<div class="wrap omts-admin-wrap">
 			<h1><?php esc_html_e( 'Osom Multi Theme Switcher', 'osom-multi-theme-switcher' ); ?></h1>
@@ -127,40 +126,51 @@ class OMTS_Admin_Page {
 								</th>
 								<td>
 									<select id="omts-rule-type" name="rule_type">
+										<option value=""><?php esc_html_e( '-- Select Rule Type --', 'osom-multi-theme-switcher' ); ?></option>
 										<option value="page"><?php esc_html_e( 'Page', 'osom-multi-theme-switcher' ); ?></option>
 										<option value="post"><?php esc_html_e( 'Post', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="post_type"><?php esc_html_e( 'Post Type', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="draft_page"><?php esc_html_e( 'Draft Page', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="draft_post"><?php esc_html_e( 'Draft Post', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="pending_page"><?php esc_html_e( 'Pending Page', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="pending_post"><?php esc_html_e( 'Pending Post', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="private_page"><?php esc_html_e( 'Private Page', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="private_post"><?php esc_html_e( 'Private Post', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="future_page"><?php esc_html_e( 'Scheduled Page', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="future_post"><?php esc_html_e( 'Scheduled Post', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="custom_post_type"><?php esc_html_e( 'Custom Post Type', 'osom-multi-theme-switcher' ); ?></option>
+										<option value="taxonomy"><?php esc_html_e( 'Taxonomy', 'osom-multi-theme-switcher' ); ?></option>
 										<option value="url"><?php esc_html_e( 'Custom URL/Slug', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="category"><?php esc_html_e( 'Category', 'osom-multi-theme-switcher' ); ?></option>
-										<option value="tag"><?php esc_html_e( 'Tag', 'osom-multi-theme-switcher' ); ?></option>
 									</select>
 								</td>
 							</tr>
-							<?php $this->render_page_row(); ?>
-							<?php $this->render_post_row(); ?>
-							<?php $this->render_post_type_row(); ?>
-							<?php $this->render_draft_page_row(); ?>
-							<?php $this->render_draft_post_row(); ?>
-							<?php $this->render_pending_page_row(); ?>
-							<?php $this->render_pending_post_row(); ?>
-							<?php $this->render_private_page_row(); ?>
-							<?php $this->render_private_post_row(); ?>
-							<?php $this->render_future_page_row(); ?>
-							<?php $this->render_future_post_row(); ?>
-							<?php $this->render_url_row(); ?>
-							<?php $this->render_category_row(); ?>
-							<?php $this->render_tag_row(); ?>
+							<tr id="omts-rule-object-row" class="omts-rule-row" style="display:none;">
+								<th scope="row">
+									<label for="omts-rule-object"><?php esc_html_e( 'Rule Object', 'osom-multi-theme-switcher' ); ?></label>
+								</th>
+								<td>
+									<select id="omts-rule-object" name="object_type">
+										<option value=""><?php esc_html_e( '-- Select --', 'osom-multi-theme-switcher' ); ?></option>
+									</select>
+									<span class="spinner" id="omts-object-spinner"></span>
+								</td>
+							</tr>
+							<tr id="omts-rule-item-row" class="omts-rule-row" style="display:none;">
+								<th scope="row">
+									<label for="omts-rule-item"><?php esc_html_e( 'Rule Item', 'osom-multi-theme-switcher' ); ?></label>
+								</th>
+								<td>
+									<select id="omts-rule-item" name="item_id">
+										<option value=""><?php esc_html_e( '-- Select --', 'osom-multi-theme-switcher' ); ?></option>
+									</select>
+									<span class="spinner" id="omts-item-spinner"></span>
+								</td>
+							</tr>
+							<tr id="omts-url-row" class="omts-rule-row" style="display:none;">
+								<th scope="row">
+									<label for="omts-url-input"><?php esc_html_e( 'Custom URL/Slug', 'osom-multi-theme-switcher' ); ?></label>
+								</th>
+								<td>
+									<input type="text" id="omts-url-input" name="custom_url" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., /about-us or about-us', 'osom-multi-theme-switcher' ); ?>">
+									<p class="description">
+										<?php esc_html_e( 'Enter a URL path or slug (with or without leading slash)', 'osom-multi-theme-switcher' ); ?>
+									</p>
+								</td>
+							</tr>
 							<tr>
 								<th scope="row">
-									<label for="omts-theme-select"><?php esc_html_e( 'Alternative Theme', 'osom-multi-theme-switcher' ); ?></label>
+									<label for="omts-theme-select"><?php esc_html_e( 'Theme', 'osom-multi-theme-switcher' ); ?></label>
 								</th>
 								<td>
 									<select id="omts-theme-select" name="theme">
@@ -203,7 +213,7 @@ class OMTS_Admin_Page {
 							<?php else : ?>
 								<?php foreach ( $rules as $index => $rule ) : ?>
 									<tr data-index="<?php echo esc_attr( $index ); ?>">
-										<td><?php echo esc_html( ucfirst( str_replace( '_', ' ', $rule['type'] ) ) ); ?></td>
+										<td><?php echo esc_html( $this->get_rule_type_display( $rule['type'] ) ); ?></td>
 										<td><?php echo esc_html( $this->get_rule_target_display( $rule ) ); ?></td>
 										<td><?php echo esc_html( $this->theme_switcher->get_theme_name( $rule['theme'] ) ); ?></td>
 										<td>
@@ -316,414 +326,15 @@ class OMTS_Admin_Page {
 	}
 
 	/**
-	 * Render page selection row.
+	 * Get human-readable display name for rule type.
 	 *
-	 * @since 1.0.0
-	 */
-	private function render_page_row() {
-		?>
-		<tr id="omts-page-row" class="omts-rule-row">
-			<th scope="row">
-				<label for="omts-page-select"><?php esc_html_e( 'Select Page', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Page --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$pages = get_pages();
-					foreach ( $pages as $page ) {
-						printf(
-							'<option value="%d">%s</option>',
-							esc_attr( $page->ID ),
-							esc_html( $page->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render post selection row.
+	 * @since 1.2.0
 	 *
-	 * @since 1.0.0
+	 * @param string $type Rule type.
+	 * @return string Display name.
 	 */
-	private function render_post_row() {
-		?>
-		<tr id="omts-post-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-post-select"><?php esc_html_e( 'Select Post', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Post --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$posts = get_posts( array( 'numberposts' => -1 ) );
-					foreach ( $posts as $post ) {
-						printf(
-							'<option value="%d">%s</option>',
-							esc_attr( $post->ID ),
-							esc_html( $post->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render post type selection row.
-	 *
-	 * @since 1.0.0
-	 */
-	private function render_post_type_row() {
-		?>
-		<tr id="omts-post-type-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-post-type-select"><?php esc_html_e( 'Select Post Type', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-post-type-select" name="post_type">
-					<option value=""><?php esc_html_e( '-- Select Post Type --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$post_types = get_post_types( array( 'public' => true ), 'objects' );
-					foreach ( $post_types as $post_type ) {
-						printf(
-							'<option value="%s">%s</option>',
-							esc_attr( $post_type->name ),
-							esc_html( $post_type->label )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render URL input row.
-	 *
-	 * @since 1.0.0
-	 */
-	private function render_url_row() {
-		?>
-		<tr id="omts-url-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-url-input"><?php esc_html_e( 'Custom URL/Slug', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<input type="text" id="omts-url-input" name="custom_url" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., /about-us or about-us', 'osom-multi-theme-switcher' ); ?>">
-				<p class="description">
-					<?php esc_html_e( 'Enter a URL path or slug (with or without leading slash)', 'osom-multi-theme-switcher' ); ?>
-				</p>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render category selection row.
-	 *
-	 * @since 1.0.0
-	 */
-	private function render_category_row() {
-		?>
-		<tr id="omts-category-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-category-select"><?php esc_html_e( 'Select Category', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-category-select" name="category_id">
-					<option value=""><?php esc_html_e( '-- Select Category --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$categories = get_categories( array( 'hide_empty' => false ) );
-					foreach ( $categories as $category ) {
-						printf(
-							'<option value="%d">%s</option>',
-							esc_attr( $category->term_id ),
-							esc_html( $category->name )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render tag selection row.
-	 *
-	 * @since 1.0.0
-	 */
-	private function render_tag_row() {
-		?>
-		<tr id="omts-tag-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-tag-select"><?php esc_html_e( 'Select Tag', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-tag-select" name="tag_id">
-					<option value=""><?php esc_html_e( '-- Select Tag --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$tags = get_tags( array( 'hide_empty' => false ) );
-					foreach ( $tags as $tag ) {
-						printf(
-							'<option value="%d">%s</option>',
-							esc_attr( $tag->term_id ),
-							esc_html( $tag->name )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render draft page selection row.
-	 *
-	 * @since 1.0.2
-	 */
-	private function render_draft_page_row() {
-		?>
-		<tr id="omts-draft-page-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-draft-page-select"><?php esc_html_e( 'Select Draft Page', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-draft-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Draft Page --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$pages = get_pages( array( 'post_status' => 'draft' ) );
-					foreach ( $pages as $page ) {
-						printf(
-							'<option value="%d">%s (Draft)</option>',
-							esc_attr( $page->ID ),
-							esc_html( $page->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render draft post selection row.
-	 *
-	 * @since 1.0.2
-	 */
-	private function render_draft_post_row() {
-		?>
-		<tr id="omts-draft-post-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-draft-post-select"><?php esc_html_e( 'Select Draft Post', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-draft-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Draft Post --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$posts = get_posts( array( 'numberposts' => -1, 'post_status' => 'draft' ) );
-					foreach ( $posts as $post ) {
-						printf(
-							'<option value="%d">%s (Draft)</option>',
-							esc_attr( $post->ID ),
-							esc_html( $post->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render pending page selection row.
-	 *
-	 * @since 1.0.2
-	 */
-	private function render_pending_page_row() {
-		?>
-		<tr id="omts-pending-page-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-pending-page-select"><?php esc_html_e( 'Select Pending Page', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-pending-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Pending Page --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$pages = get_pages( array( 'post_status' => 'pending' ) );
-					foreach ( $pages as $page ) {
-						printf(
-							'<option value="%d">%s (Pending)</option>',
-							esc_attr( $page->ID ),
-							esc_html( $page->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render pending post selection row.
-	 *
-	 * @since 1.0.2
-	 */
-	private function render_pending_post_row() {
-		?>
-		<tr id="omts-pending-post-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-pending-post-select"><?php esc_html_e( 'Select Pending Post', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-pending-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Pending Post --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$posts = get_posts( array( 'numberposts' => -1, 'post_status' => 'pending' ) );
-					foreach ( $posts as $post ) {
-						printf(
-							'<option value="%d">%s (Pending)</option>',
-							esc_attr( $post->ID ),
-							esc_html( $post->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render private page selection row.
-	 *
-	 * @since 1.0.2
-	 */
-	private function render_private_page_row() {
-		?>
-		<tr id="omts-private-page-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-private-page-select"><?php esc_html_e( 'Select Private Page', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-private-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Private Page --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$pages = get_pages( array( 'post_status' => 'private' ) );
-					foreach ( $pages as $page ) {
-						printf(
-							'<option value="%d">%s (Private)</option>',
-							esc_attr( $page->ID ),
-							esc_html( $page->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render private post selection row.
-	 *
-	 * @since 1.0.2
-	 */
-	private function render_private_post_row() {
-		?>
-		<tr id="omts-private-post-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-private-post-select"><?php esc_html_e( 'Select Private Post', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-private-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Private Post --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$posts = get_posts( array( 'numberposts' => -1, 'post_status' => 'private' ) );
-					foreach ( $posts as $post ) {
-						printf(
-							'<option value="%d">%s (Private)</option>',
-							esc_attr( $post->ID ),
-							esc_html( $post->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render scheduled page selection row.
-	 *
-	 * @since 1.0.2
-	 */
-	private function render_future_page_row() {
-		?>
-		<tr id="omts-future-page-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-future-page-select"><?php esc_html_e( 'Select Scheduled Page', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-future-page-select" name="page_id">
-					<option value=""><?php esc_html_e( '-- Select Scheduled Page --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$pages = get_pages( array( 'post_status' => 'future' ) );
-					foreach ( $pages as $page ) {
-						printf(
-							'<option value="%d">%s (Scheduled)</option>',
-							esc_attr( $page->ID ),
-							esc_html( $page->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
-	}
-
-	/**
-	 * Render scheduled post selection row.
-	 *
-	 * @since 1.0.2
-	 */
-	private function render_future_post_row() {
-		?>
-		<tr id="omts-future-post-row" class="omts-rule-row" style="display:none;">
-			<th scope="row">
-				<label for="omts-future-post-select"><?php esc_html_e( 'Select Scheduled Post', 'osom-multi-theme-switcher' ); ?></label>
-			</th>
-			<td>
-				<select id="omts-future-post-select" name="post_id">
-					<option value=""><?php esc_html_e( '-- Select Scheduled Post --', 'osom-multi-theme-switcher' ); ?></option>
-					<?php
-					$posts = get_posts( array( 'numberposts' => -1, 'post_status' => 'future' ) );
-					foreach ( $posts as $post ) {
-						printf(
-							'<option value="%d">%s (Scheduled)</option>',
-							esc_attr( $post->ID ),
-							esc_html( $post->post_title )
-						);
-					}
-					?>
-				</select>
-			</td>
-		</tr>
-		<?php
+	private function get_rule_type_display( $type ) {
+		return OMTS_Theme_Switcher::get_rule_type_display( $type );
 	}
 
 	/**
@@ -754,7 +365,13 @@ class OMTS_Admin_Page {
 
 			case 'post_type':
 				$post_type_obj = get_post_type_object( $rule['value'] );
-				return $post_type_obj ? $post_type_obj->label : $rule['value'];
+				return $post_type_obj
+					? sprintf(
+						/* translators: %s: Post type label */
+						__( 'All %s', 'osom-multi-theme-switcher' ),
+						$post_type_obj->label
+					)
+					: $rule['value'];
 
 			case 'url':
 				return $rule['value'];
@@ -767,67 +384,61 @@ class OMTS_Admin_Page {
 				$tag = get_tag( $rule['value'] );
 				return $tag ? $tag->name : __( 'Unknown Tag', 'osom-multi-theme-switcher' );
 
-			case 'draft_page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title . ' (Draft)' : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Draft Page (ID: %d)', 'osom-multi-theme-switcher' ),
+			case 'taxonomy':
+				$taxonomy = isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : '';
+				$term     = get_term( $rule['value'], $taxonomy );
+				if ( $term && ! is_wp_error( $term ) ) {
+					$tax_obj   = get_taxonomy( $taxonomy );
+					$tax_label = $tax_obj ? $tax_obj->label : $taxonomy;
+					return $term->name . ' (' . $tax_label . ')';
+				}
+				return __( 'Unknown Term', 'osom-multi-theme-switcher' );
+
+			case 'cpt_item':
+				$post = get_post( $rule['value'] );
+				return $post ? $post->post_title : sprintf(
+					/* translators: %d: Post ID */
+					__( 'Unknown Item (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
+			case 'draft_page':
 			case 'draft_post':
+			case 'draft_cpt_item':
 				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title . ' (Draft)' : sprintf(
+				return $post ? '(Draft) ' . $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Draft Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					__( 'Unknown Draft (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
 			case 'pending_page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title . ' (Pending)' : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Pending Page (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
 			case 'pending_post':
+			case 'pending_cpt_item':
 				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title . ' (Pending)' : sprintf(
+				return $post ? '(Pending) ' . $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Pending Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					__( 'Unknown Pending (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
 			case 'private_page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title . ' (Private)' : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Private Page (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
 			case 'private_post':
+			case 'private_cpt_item':
 				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title . ' (Private)' : sprintf(
+				return $post ? '(Private) ' . $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Private Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					__( 'Unknown Private (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
 			case 'future_page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title . ' (Scheduled)' : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Scheduled Page (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
 			case 'future_post':
+			case 'future_cpt_item':
 				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title . ' (Scheduled)' : sprintf(
+				return $post ? '(Scheduled) ' . $post->post_title : sprintf(
 					/* translators: %d: Post ID */
-					__( 'Unknown Scheduled Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					__( 'Unknown Scheduled (ID: %d)', 'osom-multi-theme-switcher' ),
 					$rule['value']
 				);
 
