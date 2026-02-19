@@ -129,7 +129,7 @@ class OMTS_Admin_Bar {
 			'omts-admin-bar-js',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-bar-script.js',
 			array( 'jquery' ),
-			'1.0.2',
+			'1.2.1',
 			true
 		);
 

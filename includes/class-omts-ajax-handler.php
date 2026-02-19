@@ -99,62 +99,6 @@ class OMTS_Ajax_Handler {
 	}
 
 	/**
-	 * AJAX handler: Delete rule.
-	 *
-	 * @since 1.0.0
-	 */
-	public function ajax_delete_rule() {
-		check_ajax_referer( 'omts_nonce', 'nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
-		}
-
-		$index = isset( $_POST['index'] ) ? intval( $_POST['index'] ) : -1;
-		$rules = $this->theme_switcher->get_rules();
-
-		if ( isset( $rules[ $index ] ) ) {
-			array_splice( $rules, $index, 1 );
-			$this->theme_switcher->save_rules( $rules );
-			wp_send_json_success();
-		} else {
-			wp_send_json_error( __( 'Rule not found', 'osom-multi-theme-switcher' ) );
-		}
-	}
-
-	/**
-	 * AJAX handler: Switch admin theme.
-	 *
-	 * @since 1.0.0
-	 */
-	public function ajax_switch_admin_theme() {
-		check_ajax_referer( 'omts_admin_theme_nonce', 'nonce' );
-
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
-		}
-
-		$theme = isset( $_POST['theme'] ) ? sanitize_text_field( wp_unslash( $_POST['theme'] ) ) : '';
-
-		// Validate theme exists.
-		if ( ! empty( $theme ) ) {
-			$theme_obj = wp_get_theme( $theme );
-			if ( ! $theme_obj->exists() ) {
-				wp_send_json_error( __( 'Theme does not exist', 'osom-multi-theme-switcher' ) );
-			}
-		}
-
-		$this->theme_switcher->set_admin_theme_preference( $theme );
-
-		wp_send_json_success(
-			array(
-				'theme'      => $theme,
-				'theme_name' => empty( $theme ) ? wp_get_theme()->get( 'Name' ) : $this->theme_switcher->get_theme_name( $theme ),
-			)
-		);
-	}
-
-	/**
 	 * Build rule array from the cascading selector request data.
 	 *
 	 * @since 1.2.0
@@ -482,6 +426,62 @@ class OMTS_Ajax_Handler {
 	}
 
 	/**
+	 * AJAX handler: Delete rule.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_delete_rule() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$index = isset( $_POST['index'] ) ? intval( $_POST['index'] ) : -1;
+		$rules = $this->theme_switcher->get_rules();
+
+		if ( isset( $rules[ $index ] ) ) {
+			array_splice( $rules, $index, 1 );
+			$this->theme_switcher->save_rules( $rules );
+			wp_send_json_success();
+		} else {
+			wp_send_json_error( __( 'Rule not found', 'osom-multi-theme-switcher' ) );
+		}
+	}
+
+	/**
+	 * AJAX handler: Switch admin theme.
+	 *
+	 * @since 1.0.0
+	 */
+	public function ajax_switch_admin_theme() {
+		check_ajax_referer( 'omts_admin_theme_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$theme = isset( $_POST['theme'] ) ? sanitize_text_field( wp_unslash( $_POST['theme'] ) ) : '';
+
+		// Validate theme exists.
+		if ( ! empty( $theme ) ) {
+			$theme_obj = wp_get_theme( $theme );
+			if ( ! $theme_obj->exists() ) {
+				wp_send_json_error( __( 'Theme does not exist', 'osom-multi-theme-switcher' ) );
+			}
+		}
+
+		$this->theme_switcher->set_admin_theme_preference( $theme );
+
+		wp_send_json_success(
+			array(
+				'theme'      => $theme,
+				'theme_name' => empty( $theme ) ? wp_get_theme()->get( 'Name' ) : $this->theme_switcher->get_theme_name( $theme ),
+			)
+		);
+	}
+
+	/**
 	 * Get display name for rule target.
 	 *
 	 * @since 1.0.0
@@ -632,7 +632,7 @@ class OMTS_Ajax_Handler {
 			foreach ( $prefixes as $index => $mapping ) {
 				if ( isset( $mapping['theme'] ) && $mapping['theme'] === $theme ) {
 					$prefixes[ $index ]['prefix'] = $prefix;
-					$found                        = true;
+					$found                         = true;
 					break;
 				}
 			}

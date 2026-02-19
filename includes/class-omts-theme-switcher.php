@@ -673,7 +673,7 @@ class OMTS_Theme_Switcher {
 	 * @return string|false Theme slug or false.
 	 */
 	private function get_theme_by_rest_prefix() {
-		$request_uri     = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+		$request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 		$prefix_mappings = $this->get_theme_rest_prefixes();
 
 		if ( empty( $prefix_mappings ) ) {
@@ -835,7 +835,7 @@ class OMTS_Theme_Switcher {
 				return true;
 			}
 
-			$post = $wpdb->get_row(
+			$post    = $wpdb->get_row(
 				$wpdb->prepare(
 					"SELECT post_name, post_parent FROM {$wpdb->posts} WHERE ID = %d AND post_type = 'page' AND post_status = 'publish'",
 					$page_id
@@ -1302,6 +1302,141 @@ class OMTS_Theme_Switcher {
 	}
 
 	/**
+	 * Match preview post against rules.
+	 *
+	 * Checks for page/post ID rules, status-based rules (draft_page, etc.),
+	 * and URL rules.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param array $rules Theme switching rules.
+	 * @return string|false Theme slug or false if no match.
+	 */
+	private function match_preview_post_against_rules( $rules ) {
+		$post_id = isset( $_GET['page_id'] ) ? absint( $_GET['page_id'] ) : absint( $_GET['p'] );
+
+		if ( ! $post_id ) {
+			return false;
+		}
+
+		global $wpdb;
+		$post = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT post_name, post_parent, post_type, post_status FROM {$wpdb->posts} WHERE ID = %d",
+				$post_id
+			)
+		);
+
+		if ( ! $post ) {
+			return false;
+		}
+
+		// First, check for direct page/post ID rules and status-based rules.
+		foreach ( $rules as $rule ) {
+			// Check for direct page rule (page type with matching ID).
+			if ( 'page' === $rule['type'] && 'page' === $post->post_type && absint( $rule['value'] ) === $post_id ) {
+				return $rule['theme'];
+			}
+
+			// Check for direct post rule (post type with matching ID).
+			if ( 'post' === $rule['type'] && 'post' === $post->post_type && absint( $rule['value'] ) === $post_id ) {
+				return $rule['theme'];
+			}
+
+			// Check for status-based rules (draft_page, pending_page, private_page, future_page, etc.).
+			$status_type = $post->post_status . '_' . $post->post_type;
+			if ( $rule['type'] === $status_type && absint( $rule['value'] ) === $post_id ) {
+				return $rule['theme'];
+			}
+
+			// Check for CPT item rules.
+			if ( in_array( $rule['type'], array( 'cpt_item', 'draft_cpt_item', 'pending_cpt_item', 'private_cpt_item', 'future_cpt_item' ), true ) && absint( $rule['value'] ) === $post_id ) {
+				return $rule['theme'];
+			}
+		}
+
+		// Then, check URL rules.
+		if ( 'page' === $post->post_type ) {
+			return $this->match_page_preview_against_rules( $post, $rules, $wpdb );
+		} elseif ( 'post' === $post->post_type ) {
+			return $this->match_post_preview_against_rules( $post, $rules );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Match page preview against URL rules.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param object $post Post object from database.
+	 * @param array  $rules Theme switching rules.
+	 * @param object $wpdb WordPress database object.
+	 * @return string|false Theme slug or false if no match.
+	 */
+	private function match_page_preview_against_rules( $post, $rules, $wpdb ) {
+		$post_path = $post->post_name;
+
+		if ( $post->post_parent ) {
+			$parent_path = $this->get_page_full_path( $post->post_parent, $wpdb );
+			// If parent path cannot be resolved, bail out to avoid partial matches
+			if ( '' === $parent_path ) {
+				return '';
+			}
+			$post_path = $parent_path . '/' . $post_path;
+		}
+
+		$post_path_normalized = trim( $post_path, '/' );
+
+		foreach ( $rules as $rule ) {
+			if ( 'url' === $rule['type'] ) {
+				$rule_url = trim( $rule['value'], '/' );
+
+				// Check for exact full path match only (no segment fallback for pages)
+				if ( $post_path_normalized === $rule_url ) {
+					return $rule['theme'];
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Match post preview against URL rules.
+	 *
+	 * @since 1.0.3
+	 *
+	 * @param object $post Post object from database.
+	 * @param array  $rules Theme switching rules.
+	 * @return string|false Theme slug or false if no match.
+	 */
+	private function match_post_preview_against_rules( $post, $rules ) {
+		$post_path            = $post->post_name;
+		$post_path_normalized = trim( $post_path, '/' );
+
+		foreach ( $rules as $rule ) {
+			if ( 'url' === $rule['type'] ) {
+				$rule_url          = trim( $rule['value'], '/' );
+				$rule_url_segments = explode( '/', $rule_url );
+
+				// Check for exact full path match
+				if ( $post_path_normalized === $rule_url ) {
+					return $rule['theme'];
+				}
+
+				// Check if post path appears in rule's segments
+				if ( in_array( $post_path_normalized, $rule_url_segments, true ) ) {
+					return $rule['theme'];
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Match category rule early by checking URL against category base.
 	 *
 	 * @since 1.2.0
@@ -1560,141 +1695,6 @@ class OMTS_Theme_Switcher {
 				$slug_index = $i + $base_len;
 				if ( isset( $path_segments[ $slug_index ] ) && $path_segments[ $slug_index ] === $slug ) {
 					return true;
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Match preview post against rules.
-	 *
-	 * Checks for page/post ID rules, status-based rules (draft_page, etc.),
-	 * and URL rules.
-	 *
-	 * @since 1.0.3
-	 *
-	 * @param array $rules Theme switching rules.
-	 * @return string|false Theme slug or false if no match.
-	 */
-	private function match_preview_post_against_rules( $rules ) {
-		$post_id = isset( $_GET['page_id'] ) ? absint( $_GET['page_id'] ) : absint( $_GET['p'] );
-
-		if ( ! $post_id ) {
-			return false;
-		}
-
-		global $wpdb;
-		$post = $wpdb->get_row(
-			$wpdb->prepare(
-				"SELECT post_name, post_parent, post_type, post_status FROM {$wpdb->posts} WHERE ID = %d",
-				$post_id
-			)
-		);
-
-		if ( ! $post ) {
-			return false;
-		}
-
-		// First, check for direct page/post ID rules and status-based rules.
-		foreach ( $rules as $rule ) {
-			// Check for direct page rule (page type with matching ID).
-			if ( 'page' === $rule['type'] && 'page' === $post->post_type && absint( $rule['value'] ) === $post_id ) {
-				return $rule['theme'];
-			}
-
-			// Check for direct post rule (post type with matching ID).
-			if ( 'post' === $rule['type'] && 'post' === $post->post_type && absint( $rule['value'] ) === $post_id ) {
-				return $rule['theme'];
-			}
-
-			// Check for status-based rules (draft_page, pending_page, private_page, future_page, etc.).
-			$status_type = $post->post_status . '_' . $post->post_type;
-			if ( $rule['type'] === $status_type && absint( $rule['value'] ) === $post_id ) {
-				return $rule['theme'];
-			}
-
-			// Check for CPT item rules.
-			if ( in_array( $rule['type'], array( 'cpt_item', 'draft_cpt_item', 'pending_cpt_item', 'private_cpt_item', 'future_cpt_item' ), true ) && absint( $rule['value'] ) === $post_id ) {
-				return $rule['theme'];
-			}
-		}
-
-		// Then, check URL rules.
-		if ( 'page' === $post->post_type ) {
-			return $this->match_page_preview_against_rules( $post, $rules, $wpdb );
-		} elseif ( 'post' === $post->post_type ) {
-			return $this->match_post_preview_against_rules( $post, $rules );
-		}
-
-		return false;
-	}
-
-	/**
-	 * Match page preview against URL rules.
-	 *
-	 * @since 1.0.3
-	 *
-	 * @param object $post Post object from database.
-	 * @param array  $rules Theme switching rules.
-	 * @param object $wpdb WordPress database object.
-	 * @return string|false Theme slug or false if no match.
-	 */
-	private function match_page_preview_against_rules( $post, $rules, $wpdb ) {
-		$post_path = $post->post_name;
-
-		if ( $post->post_parent ) {
-			$parent_path = $this->get_page_full_path( $post->post_parent, $wpdb );
-			// If parent path cannot be resolved, bail out to avoid partial matches
-			if ( '' === $parent_path ) {
-				return '';
-			}
-			$post_path = $parent_path . '/' . $post_path;
-		}
-
-		$post_path_normalized = trim( $post_path, '/' );
-
-		foreach ( $rules as $rule ) {
-			if ( 'url' === $rule['type'] ) {
-				$rule_url = trim( $rule['value'], '/' );
-
-				// Check for exact full path match only (no segment fallback for pages)
-				if ( $post_path_normalized === $rule_url ) {
-					return $rule['theme'];
-				}
-			}
-		}
-
-		return false;
-	}
-
-	/**
-	 * Match post preview against URL rules.
-	 *
-	 * @since 1.0.3
-	 *
-	 * @param object $post Post object from database.
-	 * @param array  $rules Theme switching rules.
-	 * @return string|false Theme slug or false if no match.
-	 */
-	private function match_post_preview_against_rules( $post, $rules ) {
-		$post_path            = $post->post_name;
-		$post_path_normalized = trim( $post_path, '/' );
-
-		foreach ( $rules as $rule ) {
-			if ( 'url' === $rule['type'] ) {
-				$rule_url          = trim( $rule['value'], '/' );
-				$rule_url_segments = explode( '/', $rule_url );
-
-				// Check for exact full path match
-				if ( $post_path_normalized === $rule_url ) {
-					return $rule['theme'];
-				}
-
-				// Check if post path appears in rule's segments
-				if ( in_array( $post_path_normalized, $rule_url_segments, true ) ) {
-					return $rule['theme'];
 				}
 			}
 		}

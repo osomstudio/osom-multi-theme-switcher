@@ -1,153 +1,59 @@
 jQuery(document).ready(function($) {
     'use strict';
 
-    // Handle rule type change — cascading selectors
+    // Handle rule type change
     $('#omts-rule-type').on('change', function() {
         const ruleType = $(this).val();
 
-        // Hide all dynamic rows and reset
+        // Hide all rule-specific rows
         $('.omts-rule-row').hide();
-        $('#omts-rule-object').html('<option value="">-- Select --</option>');
-        $('#omts-rule-item').html('<option value="">-- Select --</option>');
-        $('#omts-url-input').val('');
 
-        if (!ruleType) {
-            return;
-        }
-
-        switch (ruleType) {
+        // Show the appropriate row based on rule type
+        switch(ruleType) {
             case 'page':
+                $('#omts-page-row').show();
+                break;
             case 'post':
-                // Load items directly (no object step)
-                $('#omts-rule-item-row').show();
-                loadRuleItems(ruleType, '');
+                $('#omts-post-row').show();
                 break;
-
-            case 'custom_post_type':
-            case 'taxonomy':
-                // Load objects first, then items on object selection
-                $('#omts-rule-object-row').show();
-                loadRuleObjects(ruleType);
+            case 'post_type':
+                $('#omts-post-type-row').show();
                 break;
-
+            case 'draft_page':
+                $('#omts-draft-page-row').show();
+                break;
+            case 'draft_post':
+                $('#omts-draft-post-row').show();
+                break;
+            case 'pending_page':
+                $('#omts-pending-page-row').show();
+                break;
+            case 'pending_post':
+                $('#omts-pending-post-row').show();
+                break;
+            case 'private_page':
+                $('#omts-private-page-row').show();
+                break;
+            case 'private_post':
+                $('#omts-private-post-row').show();
+                break;
+            case 'future_page':
+                $('#omts-future-page-row').show();
+                break;
+            case 'future_post':
+                $('#omts-future-post-row').show();
+                break;
             case 'url':
                 $('#omts-url-row').show();
                 break;
+            case 'category':
+                $('#omts-category-row').show();
+                break;
+            case 'tag':
+                $('#omts-tag-row').show();
+                break;
         }
     });
-
-    // Handle rule object change — load items
-    $('#omts-rule-object').on('change', function() {
-        const objectType = $(this).val();
-        const ruleType = $('#omts-rule-type').val();
-
-        $('#omts-rule-item').html('<option value="">-- Select --</option>');
-
-        if (!objectType) {
-            $('#omts-rule-item-row').hide();
-            return;
-        }
-
-        $('#omts-rule-item-row').show();
-        loadRuleItems(ruleType, objectType);
-    });
-
-    // Track pending AJAX requests to abort stale responses
-    var pendingObjectsRequest = null;
-    var pendingItemsRequest = null;
-
-    // Load rule objects via AJAX
-    function loadRuleObjects(ruleType) {
-        if (pendingObjectsRequest) {
-            pendingObjectsRequest.abort();
-        }
-
-        const spinner = $('#omts-object-spinner');
-        spinner.addClass('is-active');
-
-        var thisRequest = $.ajax({
-            url: omtsAjax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'omts_get_rule_objects',
-                nonce: omtsAjax.nonce,
-                rule_type: ruleType
-            },
-            success: function(response) {
-                if (response.success && response.data.objects) {
-                    const select = $('#omts-rule-object');
-                    select.html('<option value="">-- Select --</option>');
-                    response.data.objects.forEach(function(obj) {
-                        select.append(
-                            $('<option></option>')
-                                .val(obj.value)
-                                .text(obj.label)
-                        );
-                    });
-                }
-            },
-            error: function(xhr, status) {
-                if (status !== 'abort') {
-                    console.error('OMTS: Failed to load rule objects', status);
-                    $('#omts-rule-object').html('<option value="" disabled>Error loading objects</option>');
-                }
-            },
-            complete: function() {
-                if (pendingObjectsRequest === thisRequest) {
-                    pendingObjectsRequest = null;
-                    spinner.removeClass('is-active');
-                }
-            }
-        });
-        pendingObjectsRequest = thisRequest;
-    }
-
-    // Load rule items via AJAX
-    function loadRuleItems(ruleType, objectType) {
-        if (pendingItemsRequest) {
-            pendingItemsRequest.abort();
-        }
-
-        const spinner = $('#omts-item-spinner');
-        spinner.addClass('is-active');
-
-        var thisRequest = $.ajax({
-            url: omtsAjax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'omts_get_rule_items',
-                nonce: omtsAjax.nonce,
-                rule_type: ruleType,
-                object_type: objectType
-            },
-            success: function(response) {
-                if (response.success && response.data.items) {
-                    const select = $('#omts-rule-item');
-                    select.html('<option value="">-- Select --</option>');
-                    response.data.items.forEach(function(item) {
-                        select.append(
-                            $('<option></option>')
-                                .val(item.value)
-                                .text(item.label)
-                        );
-                    });
-                }
-            },
-            error: function(xhr, status) {
-                if (status !== 'abort') {
-                    console.error('OMTS: Failed to load rule items', status);
-                    $('#omts-rule-item').html('<option value="" disabled>Error loading items</option>');
-                }
-            },
-            complete: function() {
-                if (pendingItemsRequest === thisRequest) {
-                    pendingItemsRequest = null;
-                    spinner.removeClass('is-active');
-                }
-            }
-        });
-        pendingItemsRequest = thisRequest;
-    }
 
     // Handle form submission
     $('#omts-add-rule-form').on('submit', function(e) {
@@ -157,12 +63,7 @@ jQuery(document).ready(function($) {
         const submitButton = form.find('button[type="submit"]');
         const ruleType = $('#omts-rule-type').val();
 
-        if (!ruleType) {
-            alert('Please select a rule type');
-            return;
-        }
-
-        // Collect form data
+        // Collect form data based on rule type
         const formData = {
             action: 'omts_save_rules',
             nonce: omtsAjax.nonce,
@@ -171,46 +72,102 @@ jQuery(document).ready(function($) {
         };
 
         // Add type-specific data
-        switch (ruleType) {
+        switch(ruleType) {
             case 'page':
-            case 'post':
-                formData.item_id = $('#omts-rule-item').val();
-                if (!formData.item_id) {
-                    alert('Please select an item');
+                formData.page_id = $('#omts-page-select').val();
+                if (!formData.page_id) {
+                    alert('Please select a page');
                     return;
                 }
                 break;
-
-            case 'custom_post_type':
-                formData.object_type = $('#omts-rule-object').val();
-                formData.item_id = $('#omts-rule-item').val();
-                if (!formData.object_type) {
+            case 'post':
+                formData.post_id = $('#omts-post-select').val();
+                if (!formData.post_id) {
+                    alert('Please select a post');
+                    return;
+                }
+                break;
+            case 'post_type':
+                formData.post_type = $('#omts-post-type-select').val();
+                if (!formData.post_type) {
                     alert('Please select a post type');
                     return;
                 }
-                if (!formData.item_id) {
-                    alert('Please select an item');
+                break;
+            case 'draft_page':
+                formData.page_id = $('#omts-draft-page-select').val();
+                if (!formData.page_id) {
+                    alert('Please select a draft page');
                     return;
                 }
                 break;
-
-            case 'taxonomy':
-                formData.object_type = $('#omts-rule-object').val();
-                formData.item_id = $('#omts-rule-item').val();
-                if (!formData.object_type) {
-                    alert('Please select a taxonomy');
-                    return;
-                }
-                if (!formData.item_id) {
-                    alert('Please select a term');
+            case 'draft_post':
+                formData.post_id = $('#omts-draft-post-select').val();
+                if (!formData.post_id) {
+                    alert('Please select a draft post');
                     return;
                 }
                 break;
-
+            case 'pending_page':
+                formData.page_id = $('#omts-pending-page-select').val();
+                if (!formData.page_id) {
+                    alert('Please select a pending page');
+                    return;
+                }
+                break;
+            case 'pending_post':
+                formData.post_id = $('#omts-pending-post-select').val();
+                if (!formData.post_id) {
+                    alert('Please select a pending post');
+                    return;
+                }
+                break;
+            case 'private_page':
+                formData.page_id = $('#omts-private-page-select').val();
+                if (!formData.page_id) {
+                    alert('Please select a private page');
+                    return;
+                }
+                break;
+            case 'private_post':
+                formData.post_id = $('#omts-private-post-select').val();
+                if (!formData.post_id) {
+                    alert('Please select a private post');
+                    return;
+                }
+                break;
+            case 'future_page':
+                formData.page_id = $('#omts-future-page-select').val();
+                if (!formData.page_id) {
+                    alert('Please select a scheduled page');
+                    return;
+                }
+                break;
+            case 'future_post':
+                formData.post_id = $('#omts-future-post-select').val();
+                if (!formData.post_id) {
+                    alert('Please select a scheduled post');
+                    return;
+                }
+                break;
             case 'url':
                 formData.custom_url = $('#omts-url-input').val();
                 if (!formData.custom_url) {
                     alert('Please enter a URL or slug');
+                    return;
+                }
+                break;
+            case 'category':
+                formData.category_id = $('#omts-category-select').val();
+                if (!formData.category_id) {
+                    alert('Please select a category');
+                    return;
+                }
+                break;
+            case 'tag':
+                formData.tag_id = $('#omts-tag-select').val();
+                if (!formData.tag_id) {
+                    alert('Please select a tag');
                     return;
                 }
                 break;
@@ -237,7 +194,7 @@ jQuery(document).ready(function($) {
                     // Add new row to table
                     const newRow = `
                         <tr data-index="${response.data.index}">
-                            <td>${escapeHtml(response.data.type_display || capitalizeFirstLetter(response.data.rule.type))}</td>
+                            <td>${capitalizeFirstLetter(response.data.rule.type)}</td>
                             <td>${escapeHtml(response.data.target_display)}</td>
                             <td>${escapeHtml(response.data.theme_name)}</td>
                             <td>
@@ -249,7 +206,7 @@ jQuery(document).ready(function($) {
 
                     // Reset form
                     form[0].reset();
-                    $('.omts-rule-row').hide();
+                    $('#omts-rule-type').trigger('change');
 
                     // Show success message
                     const successMsg = $('<span class="omts-success-message">Rule added successfully!</span>');
@@ -346,6 +303,7 @@ jQuery(document).ready(function($) {
                 prefix: prefix
             },
             success: function(response) {
+                console.log('Response:', response);
                 if (response.success) {
                     // Rebuild the entire table with updated data
                     rebuildPrefixTable(response.data.prefixes);
@@ -365,6 +323,7 @@ jQuery(document).ready(function($) {
             },
             error: function(xhr, status, error) {
                 console.log('AJAX Error:', xhr, status, error);
+                console.log('Response Text:', xhr.responseText);
                 alert('An error occurred while saving the REST prefix. Check console for details.');
             },
             complete: function() {
@@ -458,10 +417,6 @@ jQuery(document).ready(function($) {
     }
 
     function escapeHtml(text) {
-        if (text == null) {
-            return '';
-        }
-        text = String(text);
         const map = {
             '&': '&amp;',
             '<': '&lt;',

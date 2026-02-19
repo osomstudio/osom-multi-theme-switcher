@@ -7,19 +7,16 @@ A WordPress plugin that allows you to use different themes for specific pages, p
 - **Multiple Rule Types**: Create rules based on:
   - Individual Pages
   - Individual Posts
-  - Custom Post Types (all items or individual items)
+  - Post Types (e.g., all Products)
   - Custom URLs/Slugs
   - Categories
   - Tags
-  - Custom Taxonomies
 
 - **Admin Dashboard Theme Switcher**: Switch between themes in the WordPress admin area from the top admin bar to access theme-specific settings
 - **Easy-to-Use Dashboard**: Intuitive admin interface under Appearance > Theme Switcher
 - **No Coding Required**: Configure everything through the WordPress admin panel
 - **Real-time Updates**: Add and remove rules instantly with AJAX
 - **Per-User Admin Theme**: Each admin user can view the dashboard with their preferred theme
-- **Status Sync**: Automatically updates rules when post status changes (draft → published, etc.)
-- **CPT Registry**: Remembers custom post types across themes so URL matching works even when a different theme is active
 - **Compatible**: Works with any WordPress theme
 
 ## Installation
@@ -59,11 +56,10 @@ A WordPress plugin that allows you to use different themes for specific pages, p
 
 - **Page**: Apply a theme to a specific page
 - **Post**: Apply a theme to a specific blog post
-- **Custom Post Type**: Apply a theme to all posts of a certain type or individual items (e.g., all WooCommerce products)
+- **Post Type**: Apply a theme to all posts of a certain type (e.g., all WooCommerce products)
 - **Custom URL/Slug**: Apply a theme to a custom URL or slug (e.g., `/special-landing` or `about-us`)
 - **Category**: Apply a theme to all posts in a category or the category archive page
 - **Tag**: Apply a theme to all posts with a tag or the tag archive page
-- **Taxonomy**: Apply a theme to terms of custom taxonomies
 
 ### Deleting Rules
 
@@ -91,7 +87,6 @@ Simply click the **Delete** button next to any rule in the Active Theme Rules ta
 The plugin uses WordPress filters to switch themes:
 - `template` filter - Changes the parent theme
 - `stylesheet` filter - Changes the child theme/stylesheet
-- `setup_theme` hook - Ensures correct theme's functions.php is loaded
 
 Rules are stored in the WordPress options table and checked on every page load.
 
@@ -109,15 +104,6 @@ For issues, questions, or contributions, please visit the plugin repository.
 GPL v2 or later
 
 ## Changelog
-
-### 1.2.0
-- Added custom post type support (all items or individual items)
-- Added custom taxonomy support
-- Added category and tag rule types
-- Added CPT registry for cross-theme URL matching
-- Added status sync - rules auto-update when post status changes
-- Added early matching for all rule types (before WP_Query)
-- Added cascading selectors in admin UI
 
 ### 1.0.0
 - Initial release
