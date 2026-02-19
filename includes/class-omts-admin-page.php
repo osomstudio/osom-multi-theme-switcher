@@ -72,14 +72,14 @@ class OMTS_Admin_Page {
 			'omts-admin-css',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-style.css',
 			array(),
-			'1.2.1'
+			'1.2.2'
 		);
 
 		wp_enqueue_script(
 			'omts-admin-js',
 			plugin_dir_url( dirname( __FILE__ ) ) . 'assets/admin-script.js',
 			array( 'jquery' ),
-			'1.2.1',
+			'1.2.2',
 			true
 		);
 
@@ -87,8 +87,9 @@ class OMTS_Admin_Page {
 			'omts-admin-js',
 			'omtsAjax',
 			array(
-				'ajaxurl' => admin_url( 'admin-ajax.php' ),
-				'nonce'   => wp_create_nonce( 'omts_nonce' ),
+				'ajaxurl'     => admin_url( 'admin-ajax.php' ),
+				'nonce'       => wp_create_nonce( 'omts_nonce' ),
+				'selectLabel' => __( '-- Select --', 'osom-multi-theme-switcher' ),
 			)
 		);
 	}
