@@ -3,7 +3,7 @@ Contributors: osomstudio, bartosznowak, tomziel, kamiljanq, rainkom
 Tags: multiple themes, theme switcher, theme per page, woocommerce theme, landing page theme, multi theme, conditional theme, theme rules
 Requires at least: 5.0
 Tested up to: 6.9
-Stable tag: 1.2.1
+Stable tag: 1.0.3
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -92,10 +92,10 @@ The plugin is designed for single-site WordPress installations. For multisite se
 
 == Screenshots ==
 
-1. Theme Switcher rules panel — manage all your theme rules from one place
-2. Adding a new rule — select content type, target, and alternative theme
-3. Admin bar theme switcher — quickly access settings for any installed theme
-4. Different themes on different pages — same site, different designs
+1. Admin settings page - Add new theme rules and manage existing ones
+2. Rule type selection - Choose from pages, posts, post types, URLs, categories, or tags
+3. Admin bar theme switcher - Quickly switch themes in the WordPress dashboard
+4. Side-by-side comparison of themes before/after theme switch
 
 = Built by Osom Studio =
 
