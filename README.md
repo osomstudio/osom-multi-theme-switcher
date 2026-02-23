@@ -110,6 +110,9 @@ GPL v2 or later
 
 ## Changelog
 
+### 1.2.2
+- Fix bug with object selectors
+
 ### 1.2.1
 - Added custom post type support (all items or individual items)
 - Added custom taxonomy support

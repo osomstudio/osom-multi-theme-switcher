@@ -3,7 +3,7 @@ Contributors: osomstudio, bartosznowak, tomziel, kamiljanq, rainkom
 Tags: multiple themes, theme switcher, theme per page, woocommerce theme, landing page theme, multi theme, conditional theme, theme rules
 Requires at least: 5.0
 Tested up to: 6.9
-Stable tag: 1.2.1
+Stable tag: 1.2.2
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -104,6 +104,9 @@ We're a WordPress & WooCommerce agency that builds, audits, and maintains comple
 If you find a bug or have a feature request, [let us know on GitHub](https://github.com/osomstudio/osom-multi-theme-switcher) or through the support forum.
 
 == Changelog ==
+
+= 1.2.2 =
+* Fix bug with object selectors
 
 = 1.2.1 =
 * Added cascading selector UI for adding theme rules (Custom Post Type, Taxonomy support)
