@@ -821,16 +821,16 @@ class OMTS_Theme_Switcher {
 
 		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
 		
-		// Skip static file requests (images, CSS, JS, fonts, etc.)
-		if ( preg_match( '/\.(jpe?g|png|gif|svg|css|js|woff2?|ttf|eot|ico|pdf|zip|mp4|webp)$/i', $sanitized_uri ) ) {
-			return false;
-		}
-
 		// Get the URL path without query string
 		$request_uri = parse_url( $sanitized_uri, PHP_URL_PATH );
 		
 		// parse_url() can return null (missing component), false (malformed URL), or string
 		if ( null === $request_uri || false === $request_uri ) {
+			return false;
+		}
+
+		// Skip static file requests (images, CSS, JS, fonts, etc.)
+		if ( preg_match( '/\.(jpe?g|png|gif|svg|css|js|woff2?|ttf|eot|ico|pdf|zip|mp4|webp)$/i', $request_uri ) ) {
 			return false;
 		}
 
@@ -950,14 +950,10 @@ class OMTS_Theme_Switcher {
 	private function match_post_early( $post_identifier ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
-
-		// Get the URL path without query string
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
 
 		// If numeric, it's a post ID - look up the post_name
 		if ( is_numeric( $post_identifier ) ) {
@@ -1004,14 +1000,12 @@ class OMTS_Theme_Switcher {
 	private function match_draft_page_early( $page_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
-		$page_id       = absint( $page_id );
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
+		$page_id = absint( $page_id );
 
 		$post = $wpdb->get_row(
 			$wpdb->prepare(
@@ -1047,7 +1041,8 @@ class OMTS_Theme_Switcher {
 	private function match_draft_post_early( $post_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
@@ -1062,10 +1057,6 @@ class OMTS_Theme_Switcher {
 		if ( ! $slug ) {
 			return false;
 		}
-
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
 		$path_segments = explode( '/', $path );
 
 		foreach ( $path_segments as $segment ) {
@@ -1088,14 +1079,12 @@ class OMTS_Theme_Switcher {
 	private function match_pending_page_early( $page_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
-		$page_id       = absint( $page_id );
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
+		$page_id = absint( $page_id );
 
 		$post = $wpdb->get_row(
 			$wpdb->prepare(
@@ -1131,7 +1120,8 @@ class OMTS_Theme_Switcher {
 	private function match_pending_post_early( $post_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
@@ -1146,10 +1136,6 @@ class OMTS_Theme_Switcher {
 		if ( ! $slug ) {
 			return false;
 		}
-
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
 		$path_segments = explode( '/', $path );
 
 		foreach ( $path_segments as $segment ) {
@@ -1172,14 +1158,12 @@ class OMTS_Theme_Switcher {
 	private function match_private_page_early( $page_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
-		$page_id       = absint( $page_id );
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
+		$page_id = absint( $page_id );
 
 		$post = $wpdb->get_row(
 			$wpdb->prepare(
@@ -1215,7 +1199,8 @@ class OMTS_Theme_Switcher {
 	private function match_private_post_early( $post_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
@@ -1230,10 +1215,6 @@ class OMTS_Theme_Switcher {
 		if ( ! $slug ) {
 			return false;
 		}
-
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
 		$path_segments = explode( '/', $path );
 
 		foreach ( $path_segments as $segment ) {
@@ -1256,14 +1237,12 @@ class OMTS_Theme_Switcher {
 	private function match_future_page_early( $page_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
-		$page_id       = absint( $page_id );
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
+		$page_id = absint( $page_id );
 
 		$post = $wpdb->get_row(
 			$wpdb->prepare(
@@ -1299,7 +1278,8 @@ class OMTS_Theme_Switcher {
 	private function match_future_post_early( $post_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
@@ -1314,9 +1294,6 @@ class OMTS_Theme_Switcher {
 		if ( ! $slug ) {
 			return false;
 		}
-
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
 		$path          = trim( $request_uri, '/' );
 		$path_segments = explode( '/', $path );
 
@@ -1475,7 +1452,8 @@ class OMTS_Theme_Switcher {
 	private function match_category_early( $term_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
@@ -1492,10 +1470,6 @@ class OMTS_Theme_Switcher {
 		if ( ! $term ) {
 			return false;
 		}
-
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
 
 		$category_base = get_option( 'category_base' );
 		if ( empty( $category_base ) ) {
@@ -1519,7 +1493,8 @@ class OMTS_Theme_Switcher {
 	private function match_tag_early( $term_id ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
@@ -1536,10 +1511,6 @@ class OMTS_Theme_Switcher {
 		if ( ! $term ) {
 			return false;
 		}
-
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
 
 		$tag_base = get_option( 'tag_base' );
 		if ( empty( $tag_base ) ) {
@@ -1599,9 +1570,10 @@ class OMTS_Theme_Switcher {
 			return false;
 		}
 
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
+			return false;
+		}
 
 		$rewrite_slug  = trim( $rewrite_slug, '/' );
 		$expected_path = $rewrite_slug . '/' . $term->slug;
@@ -1621,13 +1593,10 @@ class OMTS_Theme_Switcher {
 	 * @return bool Whether current URL matches the post type.
 	 */
 	private function match_post_type_early( $rule ) {
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
-
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
 
 		// First try stored slugs (works even before CPT is registered).
 		if ( ! empty( $rule['archive_slug'] ) ) {
@@ -1678,7 +1647,8 @@ class OMTS_Theme_Switcher {
 	private function match_cpt_item_early( $post_id, $post_status = 'publish' ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
 
@@ -1700,10 +1670,7 @@ class OMTS_Theme_Switcher {
 			return false;
 		}
 
-		$slug          = $post->post_name;
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
+		$slug = $post->post_name;
 		$path_segments = explode( '/', $path );
 
 		// Determine the rewrite base for this CPT.
