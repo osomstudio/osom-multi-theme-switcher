@@ -806,6 +806,38 @@ class OMTS_Theme_Switcher {
 	}
 
 	/**
+	 * Get sanitized URL path, skipping static files.
+	 *
+	 * Helper function to safely parse REQUEST_URI and skip static file requests.
+	 *
+	 * @since 1.0.2
+	 *
+	 * @return string|false URL path or false if not available/static file.
+	 */
+	private function get_url_path_early() {
+		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+			return false;
+		}
+
+		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+		
+		// Skip static file requests (images, CSS, JS, fonts, etc.)
+		if ( preg_match( '/\.(jpe?g|png|gif|svg|css|js|woff2?|ttf|eot|ico|pdf|zip|mp4|webp)$/i', $sanitized_uri ) ) {
+			return false;
+		}
+
+		// Get the URL path without query string
+		$request_uri = parse_url( $sanitized_uri, PHP_URL_PATH );
+		
+		// parse_url() can return null (missing component), false (malformed URL), or string
+		if ( null === $request_uri || false === $request_uri ) {
+			return false;
+		}
+
+		return trim( $request_uri, '/' );
+	}
+
+	/**
 	 * Match page rule early by querying database directly.
 	 *
 	 * @since 1.0.2
@@ -816,14 +848,10 @@ class OMTS_Theme_Switcher {
 	private function match_page_early( $page_identifier ) {
 		global $wpdb;
 
-		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
+		$path = $this->get_url_path_early();
+		if ( false === $path ) {
 			return false;
 		}
-
-		// Get the URL path without query string
-		$sanitized_uri = sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) );
-		$request_uri   = parse_url( $sanitized_uri, PHP_URL_PATH );
-		$path          = trim( $request_uri, '/' );
 
 		// If numeric, it's a page ID - look up the post_name
 		if ( is_numeric( $page_identifier ) ) {
