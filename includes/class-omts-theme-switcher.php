@@ -49,6 +49,18 @@ class OMTS_Theme_Switcher {
 	private $filtering_rest_prefix = false;
 
 	/**
+	 * Flag to prevent recursion when resolving the theme.
+	 *
+	 * wp_get_theme() can call get_option( 'stylesheet' )/get_option( 'template' )
+	 * internally (via get_raw_theme_root(), whenever more than one theme root is
+	 * registered), which re-enters our pre_option_template/pre_option_stylesheet
+	 * filters and recurses infinitely without this guard.
+	 *
+	 * @var bool
+	 */
+	private $resolving_theme = false;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
@@ -77,21 +89,34 @@ class OMTS_Theme_Switcher {
 	 * @since 1.0.2
 	 */
 	public function setup_theme_switch() {
-		$theme = $this->get_theme_for_current_request( true );
+		if ( $this->resolving_theme ) {
+			return;
+		}
+
+		$this->resolving_theme = true;
+		$theme                 = $this->get_theme_for_current_request( true );
 
 		if ( ! $theme ) {
+			$this->resolving_theme = false;
 			return;
 		}
 
 		$theme_obj = wp_get_theme( $theme );
-		if ( ! $theme_obj->exists() ) {
+		$exists    = $theme_obj->exists();
+		// For child themes, 'template' must be the parent theme's slug, not the
+		// child's — otherwise TEMPLATEPATH/STYLESHEETPATH both point at the child
+		// and locate_template() can never find the parent's template files.
+		$template_slug = $exists ? $theme_obj->get_template() : $theme;
+		$this->resolving_theme = false;
+
+		if ( ! $exists ) {
 			return;
 		}
 
 		add_filter(
 			'option_template',
-			function() use ( $theme ) {
-				return $theme;
+			function() use ( $template_slug ) {
+				return $template_slug;
 			},
 			1
 		);
@@ -114,16 +139,28 @@ class OMTS_Theme_Switcher {
 	 * @return string Modified template.
 	 */
 	public function switch_theme_template( $template ) {
-		$theme = $this->get_theme_for_current_request();
+		if ( $this->resolving_theme ) {
+			return $template;
+		}
+
+		$this->resolving_theme = true;
+		$theme                 = $this->get_theme_for_current_request();
 
 		if ( $theme ) {
 			$theme_obj = wp_get_theme( $theme );
-			if ( ! $theme_obj->exists() ) {
+			$exists    = $theme_obj->exists();
+			$this->resolving_theme = false;
+
+			if ( ! $exists ) {
 				return $template;
 			}
+
+			// For child themes, 'template' must resolve to the parent theme's slug.
+			return $theme_obj->get_template();
 		}
 
-		return $theme ? $theme : $template;
+		$this->resolving_theme = false;
+		return $template;
 	}
 
 	/**
@@ -135,16 +172,27 @@ class OMTS_Theme_Switcher {
 	 * @return string Modified stylesheet.
 	 */
 	public function switch_theme_stylesheet( $stylesheet ) {
-		$theme = $this->get_theme_for_current_request();
+		if ( $this->resolving_theme ) {
+			return $stylesheet;
+		}
+
+		$this->resolving_theme = true;
+		$theme                 = $this->get_theme_for_current_request();
 
 		if ( $theme ) {
 			$theme_obj = wp_get_theme( $theme );
-			if ( ! $theme_obj->exists() ) {
+			$exists    = $theme_obj->exists();
+			$this->resolving_theme = false;
+
+			if ( ! $exists ) {
 				return $stylesheet;
 			}
+
+			return $theme;
 		}
 
-		return $theme ? $theme : $stylesheet;
+		$this->resolving_theme = false;
+		return $stylesheet;
 	}
 
 	/**
