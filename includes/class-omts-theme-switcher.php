@@ -61,6 +61,24 @@ class OMTS_Theme_Switcher {
 	private $resolving_theme = false;
 
 	/**
+	 * Path used instead of the current request URI when testing a URL.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @var string|null
+	 */
+	private $path_override = null;
+
+	/**
+	 * Details of the rule that produced the current theme.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @var array|null
+	 */
+	private $matched_rule = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @since 1.0.0
@@ -77,7 +95,6 @@ class OMTS_Theme_Switcher {
 		add_action( 'init', array( $this, 'add_custom_rest_rewrite_rules' ), 1 );
 		add_action( 'init', array( $this, 'reregister_missing_cpts' ), 998 );
 		add_action( 'init', array( $this, 'capture_theme_objects' ), 999 );
-		add_filter( 'rest_pre_dispatch', array( $this, 'set_rest_theme_early' ), 1, 3 );
 	}
 
 	/**
@@ -251,6 +268,13 @@ class OMTS_Theme_Switcher {
 
 		// Check if we're in admin area (NOT AJAX, actual admin pages).
 		if ( is_admin() && ! wp_doing_ajax() ) {
+			// When an editable item is open, follow the rule that governs it, so the
+			// editor loads the same theme a visitor will see on the frontend.
+			$editor_theme = $this->get_theme_for_edited_post();
+			if ( $editor_theme ) {
+				return $editor_theme;
+			}
+
 			$admin_theme = $this->get_admin_theme_preference();
 			if ( $admin_theme ) {
 				return $admin_theme;
@@ -277,8 +301,12 @@ class OMTS_Theme_Switcher {
 
 					// Check if any rules match this type and ID.
 					$rules = $this->get_rules();
-					foreach ( $rules as $rule ) {
+					foreach ( $rules as $index => $rule ) {
+						if ( ! $this->is_rule_enabled( $rule ) ) {
+							continue;
+						}
 						if ( $rule['type'] === $rule_type && absint( $rule['value'] ) === $post_id ) {
+							$this->record_match( $rule, $index, 'preview' );
 							return $rule['theme'];
 						}
 					}
@@ -302,8 +330,12 @@ class OMTS_Theme_Switcher {
 				}
 			}
 
-			foreach ( $rules as $rule ) {
+			foreach ( $rules as $index => $rule ) {
+				if ( ! $this->is_rule_enabled( $rule ) ) {
+					continue;
+				}
 				if ( $this->rule_matches( $rule, $early ) ) {
+					$this->record_match( $rule, $index, $early ? 'early' : 'query' );
 					return $rule['theme'];
 				}
 			}
@@ -353,10 +385,7 @@ class OMTS_Theme_Switcher {
 		// If called early, we can only check URL-based rules
 		if ( $early ) {
 			if ( 'url' === $rule['type'] ) {
-				$request     = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-				$current_url = trim( $request, '/' );
-				$rule_url    = trim( $rule['value'], '/' );
-				return ( $current_url === $rule_url ) || ( 0 === strpos( $current_url, $rule_url ) );
+				return $this->match_url_rule( $rule );
 			}
 			if ( 'page' === $rule['type'] ) {
 				return $this->match_page_early( $rule['value'] );
@@ -431,10 +460,7 @@ class OMTS_Theme_Switcher {
 				return is_singular( $rule['value'] ) || is_post_type_archive( $rule['value'] );
 
 			case 'url':
-				$request     = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-				$current_url = trim( $request, '/' );
-				$rule_url    = trim( $rule['value'], '/' );
-				return ( $current_url === $rule_url ) || ( 0 === strpos( $current_url, $rule_url ) );
+				return $this->match_url_rule( $rule );
 
 			case 'category':
 				return is_category( $rule['value'] ) || ( is_single() && in_category( $rule['value'] ) );
@@ -481,6 +507,529 @@ class OMTS_Theme_Switcher {
 	}
 
 	/**
+	 * Match a custom URL rule against the current request.
+	 *
+	 * Rules created before 1.3.0 have no match mode stored and keep the original
+	 * prefix behaviour, so existing setups are not silently narrowed.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $rule Rule to check.
+	 * @return bool Whether the rule matches.
+	 */
+	private function match_url_rule( $rule ) {
+		$path = $this->get_url_path_early();
+
+		if ( false === $path ) {
+			return false;
+		}
+
+		$rule_url = trim( (string) $rule['value'], '/' );
+		$mode     = isset( $rule['match'] ) ? $rule['match'] : 'prefix';
+
+		if ( $path === $rule_url ) {
+			return true;
+		}
+
+		if ( 'exact' === $mode ) {
+			return false;
+		}
+
+		return '' !== $rule_url && 0 === strpos( $path, $rule_url . '/' );
+	}
+
+	/**
+	 * Check whether a rule is switched on.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $rule Rule to check.
+	 * @return bool Whether the rule takes part in matching.
+	 */
+	public function is_rule_enabled( $rule ) {
+		return ! isset( $rule['enabled'] ) || (bool) $rule['enabled'];
+	}
+
+	/**
+	 * Remember which rule produced the current theme.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array  $rule  Matched rule.
+	 * @param int    $index Rule position.
+	 * @param string $mode  How the match was made.
+	 */
+	private function record_match( $rule, $index, $mode ) {
+		$this->matched_rule = array(
+			'rule'  => $rule,
+			'index' => $index,
+			'mode'  => $mode,
+		);
+	}
+
+	/**
+	 * Get details of the rule that produced the current theme.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return array|null Match details or null when the main theme is used.
+	 */
+	public function get_matched_rule() {
+		return $this->matched_rule;
+	}
+
+	/**
+	 * Work out which theme a given URL would render in.
+	 *
+	 * Powers the "test an address" tool, so support can answer "why does this
+	 * page look like that?" without opening the database.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param string $url Absolute URL or path.
+	 * @return array {
+	 *     @type string|false $theme Theme slug or false for the main theme.
+	 *     @type array|null   $rule  Matched rule.
+	 *     @type int|null     $index Rule position.
+	 * }
+	 */
+	public function resolve_for_path( $url ) {
+		$path = wp_parse_url( $url, PHP_URL_PATH );
+
+		if ( ! is_string( $path ) ) {
+			$path = '';
+		}
+
+		$path      = trim( $path, '/' );
+		$home_path = trim( (string) wp_parse_url( home_url(), PHP_URL_PATH ), '/' );
+
+		// Strip the subdirectory WordPress lives in, if any.
+		if ( '' !== $home_path ) {
+			if ( $path === $home_path ) {
+				$path = '';
+			} elseif ( 0 === strpos( $path, $home_path . '/' ) ) {
+				$path = trim( substr( $path, strlen( $home_path ) ), '/' );
+			}
+		}
+
+		$result   = array(
+			'theme' => false,
+			'rule'  => null,
+			'index' => null,
+			'path'  => $path,
+		);
+		$previous = $this->path_override;
+
+		$this->path_override = $path;
+
+		foreach ( $this->get_rules() as $index => $rule ) {
+			if ( ! $this->is_rule_enabled( $rule ) ) {
+				continue;
+			}
+
+			if ( $this->rule_matches( $rule, true ) ) {
+				$result['theme'] = $rule['theme'];
+				$result['rule']  = $rule;
+				$result['index'] = $index;
+				break;
+			}
+		}
+
+		$this->path_override = $previous;
+
+		return $result;
+	}
+
+	/**
+	 * Get the theme for the item currently open in the editor.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return string|false Theme slug or false.
+	 */
+	private function get_theme_for_edited_post() {
+		global $pagenow;
+
+		if ( 'post.php' !== $pagenow || ! isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return false;
+		}
+
+		$post_id = absint( wp_unslash( $_GET['post'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		/**
+		 * Filter whether the editor follows the rule of the item being edited.
+		 *
+		 * On by default: the editor loads the same theme the visitor will see, so
+		 * the block list and field groups match the frontend.
+		 *
+		 * @since 1.3.0
+		 *
+		 * @param bool $follow  Whether to switch the editor to the item's theme.
+		 * @param int  $post_id Post being edited.
+		 */
+		if ( ! apply_filters( 'omts_editor_follows_rule', true, $post_id ) ) {
+			return false;
+		}
+
+		$match = $this->get_rule_for_post( $post_id );
+
+		if ( ! $match ) {
+			return false;
+		}
+
+		$this->record_match( $match['rule'], $match['index'], 'editor' );
+
+		return $match['rule']['theme'];
+	}
+
+	/**
+	 * Find the rule that governs a single post, page or CPT item.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param int  $post_id        Post ID.
+	 * @param bool $include_terms  Also check category/tag/taxonomy rules. Only safe
+	 *                             after taxonomies are registered (init).
+	 * @return array|null Array with 'rule' and 'index', or null.
+	 */
+	public function get_rule_for_post( $post_id, $include_terms = false ) {
+		global $wpdb;
+
+		$post_id = absint( $post_id );
+
+		if ( ! $post_id ) {
+			return null;
+		}
+
+		$post = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT post_status, post_type FROM {$wpdb->posts} WHERE ID = %d",
+				$post_id
+			)
+		);
+
+		if ( ! $post ) {
+			return null;
+		}
+
+		$item_types  = array(
+			'page',
+			'post',
+			'cpt_item',
+			'draft_page',
+			'draft_post',
+			'draft_cpt_item',
+			'pending_page',
+			'pending_post',
+			'pending_cpt_item',
+			'private_page',
+			'private_post',
+			'private_cpt_item',
+			'future_page',
+			'future_post',
+			'future_cpt_item',
+		);
+		$term_types  = array( 'category', 'tag', 'taxonomy' );
+
+		foreach ( $this->get_rules() as $index => $rule ) {
+			if ( ! $this->is_rule_enabled( $rule ) ) {
+				continue;
+			}
+
+			$value = isset( $rule['value'] ) ? $rule['value'] : '';
+			$match = array(
+				'rule'  => $rule,
+				'index' => $index,
+			);
+
+			if ( in_array( $rule['type'], $item_types, true ) && absint( $value ) === $post_id ) {
+				return $match;
+			}
+
+			if ( 'post_type' === $rule['type'] && $value === $post->post_type ) {
+				return $match;
+			}
+
+			if ( $include_terms && in_array( $rule['type'], $term_types, true ) ) {
+				$taxonomy = 'category' === $rule['type'] ? 'category' : ( 'tag' === $rule['type'] ? 'post_tag' : ( isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : '' ) );
+
+				if ( $taxonomy && taxonomy_exists( $taxonomy ) && has_term( absint( $value ), $taxonomy, $post_id ) ) {
+					return $match;
+				}
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get the theme a single item renders in.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param int  $post_id       Post ID.
+	 * @param bool $include_terms Also check taxonomy rules.
+	 * @return string|false Theme slug or false for the main theme.
+	 */
+	public function get_theme_for_post( $post_id, $include_terms = false ) {
+		$match = $this->get_rule_for_post( $post_id, $include_terms );
+
+		return $match ? $match['rule']['theme'] : false;
+	}
+
+	/**
+	 * Get the display name for a rule's target.
+	 *
+	 * Single source of truth for the rules table, the editor panel, the admin bar
+	 * and the post list column.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $rule Rule array.
+	 * @return string Display name.
+	 */
+	public static function get_rule_target_display( $rule ) {
+		switch ( $rule['type'] ) {
+			case 'page':
+				$page = get_post( $rule['value'] );
+				return $page ? $page->post_title : sprintf(
+					/* translators: %d: Page ID */
+					__( 'Unknown Page (ID: %d)', 'osom-multi-theme-switcher' ),
+					$rule['value']
+				);
+
+			case 'post':
+				$post = get_post( $rule['value'] );
+				return $post ? $post->post_title : sprintf(
+					/* translators: %d: Post ID */
+					__( 'Unknown Post (ID: %d)', 'osom-multi-theme-switcher' ),
+					$rule['value']
+				);
+
+			case 'post_type':
+				$post_type_obj = get_post_type_object( $rule['value'] );
+				return $post_type_obj
+					? sprintf(
+						/* translators: %s: Post type label */
+						__( 'All %s', 'osom-multi-theme-switcher' ),
+						$post_type_obj->label
+					)
+					: $rule['value'];
+
+			case 'url':
+				return $rule['value'];
+
+			case 'category':
+				$category = get_category( $rule['value'] );
+				return $category ? $category->name : __( 'Unknown Category', 'osom-multi-theme-switcher' );
+
+			case 'tag':
+				$tag = get_tag( $rule['value'] );
+				return $tag ? $tag->name : __( 'Unknown Tag', 'osom-multi-theme-switcher' );
+
+			case 'taxonomy':
+				$taxonomy = isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : '';
+				$term     = get_term( $rule['value'], $taxonomy );
+				if ( $term && ! is_wp_error( $term ) ) {
+					$tax_obj   = get_taxonomy( $taxonomy );
+					$tax_label = $tax_obj ? $tax_obj->label : $taxonomy;
+					return $term->name . ' (' . $tax_label . ')';
+				}
+				return __( 'Unknown Term', 'osom-multi-theme-switcher' );
+
+			case 'cpt_item':
+				$post = get_post( $rule['value'] );
+				return $post ? $post->post_title : sprintf(
+					/* translators: %d: Post ID */
+					__( 'Unknown Item (ID: %d)', 'osom-multi-theme-switcher' ),
+					$rule['value']
+				);
+
+			case 'draft_page':
+			case 'draft_post':
+			case 'draft_cpt_item':
+				$post = get_post( $rule['value'] );
+				return $post ? '(Draft) ' . $post->post_title : sprintf(
+					/* translators: %d: Post ID */
+					__( 'Unknown Draft (ID: %d)', 'osom-multi-theme-switcher' ),
+					$rule['value']
+				);
+
+			case 'pending_page':
+			case 'pending_post':
+			case 'pending_cpt_item':
+				$post = get_post( $rule['value'] );
+				return $post ? '(Pending) ' . $post->post_title : sprintf(
+					/* translators: %d: Post ID */
+					__( 'Unknown Pending (ID: %d)', 'osom-multi-theme-switcher' ),
+					$rule['value']
+				);
+
+			case 'private_page':
+			case 'private_post':
+			case 'private_cpt_item':
+				$post = get_post( $rule['value'] );
+				return $post ? '(Private) ' . $post->post_title : sprintf(
+					/* translators: %d: Post ID */
+					__( 'Unknown Private (ID: %d)', 'osom-multi-theme-switcher' ),
+					$rule['value']
+				);
+
+			case 'future_page':
+			case 'future_post':
+			case 'future_cpt_item':
+				$post = get_post( $rule['value'] );
+				return $post ? '(Scheduled) ' . $post->post_title : sprintf(
+					/* translators: %d: Post ID */
+					__( 'Unknown Scheduled (ID: %d)', 'osom-multi-theme-switcher' ),
+					$rule['value']
+				);
+
+			default:
+				return $rule['value'];
+		}
+	}
+
+	/**
+	 * Work out the rule type that targets a single item.
+	 *
+	 * Mirrors the status-aware rule types used by OMTS_Status_Sync.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param WP_Post|int $post Post object or ID.
+	 * @return string Rule type, or empty string when unsupported.
+	 */
+	public static function get_rule_type_for_post( $post ) {
+		$post = get_post( $post );
+
+		if ( ! $post ) {
+			return '';
+		}
+
+		if ( 'page' === $post->post_type ) {
+			$base = 'page';
+		} elseif ( 'post' === $post->post_type ) {
+			$base = 'post';
+		} else {
+			$base = 'cpt_item';
+		}
+
+		if ( 'publish' === $post->post_status ) {
+			return $base;
+		}
+
+		if ( ! in_array( $post->post_status, array( 'draft', 'pending', 'private', 'future' ), true ) ) {
+			return '';
+		}
+
+		return $post->post_status . '_' . $base;
+	}
+
+	/**
+	 * Remove every rule that targets a single item.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param int $post_id Post ID.
+	 * @return int Number of rules removed.
+	 */
+	public function remove_rules_for_post( $post_id ) {
+		$post_id = absint( $post_id );
+		$rules   = $this->get_rules();
+		$item_types = array(
+			'page',
+			'post',
+			'cpt_item',
+			'draft_page',
+			'draft_post',
+			'draft_cpt_item',
+			'pending_page',
+			'pending_post',
+			'pending_cpt_item',
+			'private_page',
+			'private_post',
+			'private_cpt_item',
+			'future_page',
+			'future_post',
+			'future_cpt_item',
+		);
+		$kept    = array();
+
+		foreach ( $rules as $rule ) {
+			$targets_post = in_array( $rule['type'], $item_types, true ) && absint( $rule['value'] ) === $post_id;
+
+			if ( ! $targets_post ) {
+				$kept[] = $rule;
+			}
+		}
+
+		$removed = count( $rules ) - count( $kept );
+
+		if ( $removed ) {
+			$this->save_rules( array_values( $kept ) );
+		}
+
+		return $removed;
+	}
+
+	/**
+	 * Point a single item at a theme, replacing any rule it already has.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param int    $post_id Post ID.
+	 * @param string $theme   Theme stylesheet, or empty to fall back to the main theme.
+	 * @return bool Whether the rules changed.
+	 */
+	public function assign_theme_to_post( $post_id, $theme ) {
+		$post_id = absint( $post_id );
+		$post    = get_post( $post_id );
+
+		if ( ! $post ) {
+			return false;
+		}
+
+		$this->remove_rules_for_post( $post_id );
+
+		if ( empty( $theme ) ) {
+			return true;
+		}
+
+		$type = self::get_rule_type_for_post( $post );
+
+		if ( ! $type ) {
+			return false;
+		}
+
+		$rules   = $this->get_rules();
+		$rules[] = array(
+			'type'  => $type,
+			'theme' => $theme,
+			'value' => $post_id,
+		);
+
+		return $this->save_rules( array_values( $rules ) );
+	}
+
+	/**
+	 * Describe a rule in one line, e.g. "Page: About us".
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $rule Rule to describe.
+	 * @return string Human readable description.
+	 */
+	public static function describe_rule( $rule ) {
+		return sprintf(
+			/* translators: 1: Rule type, 2: Rule target */
+			__( '%1$s → %2$s', 'osom-multi-theme-switcher' ),
+			self::get_rule_type_display( $rule['type'] ),
+			self::get_rule_target_display( $rule )
+		);
+	}
+
+	/**
 	 * Get all saved rules.
 	 *
 	 * @since 1.0.0
@@ -501,6 +1050,35 @@ class OMTS_Theme_Switcher {
 	 */
 	public function save_rules( $rules ) {
 		return update_option( $this->option_name, $rules );
+	}
+
+	/**
+	 * Get the theme the site really runs on, ignoring our own switching.
+	 *
+	 * get_option( 'stylesheet' ) goes through this class's own pre_option filter,
+	 * so it reports the switched theme rather than the site's main one.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @return string Stylesheet of the site's main theme.
+	 */
+	public function get_site_default_theme() {
+		static $default = null;
+
+		if ( null !== $default ) {
+			return $default;
+		}
+
+		global $wpdb;
+
+		$default = (string) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1",
+				'stylesheet'
+			)
+		);
+
+		return $default;
 	}
 
 	/**
@@ -839,21 +1417,6 @@ class OMTS_Theme_Switcher {
 	}
 
 	/**
-	 * Set theme early for REST requests based on prefix.
-	 *
-	 * @since 1.0.1
-	 *
-	 * @param mixed           $result  Response to replace the requested version with.
-	 * @param WP_REST_Server  $server  Server instance.
-	 * @param WP_REST_Request $request Request used to generate the response.
-	 * @return mixed
-	 */
-	public function set_rest_theme_early( $result, $server, $request ) {
-		// This runs early in REST processing, ensuring theme is set before any REST logic runs.
-		return $result;
-	}
-
-	/**
 	 * Get sanitized URL path, skipping static files.
 	 *
 	 * Helper function to safely parse REQUEST_URI and skip static file requests.
@@ -863,6 +1426,10 @@ class OMTS_Theme_Switcher {
 	 * @return string|false URL path or false if not available/static file.
 	 */
 	private function get_url_path_early() {
+		if ( null !== $this->path_override ) {
+			return $this->path_override;
+		}
+
 		if ( ! isset( $_SERVER['REQUEST_URI'] ) ) {
 			return false;
 		}

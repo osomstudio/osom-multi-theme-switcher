@@ -1,0 +1,723 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Osom Multi Theme Switcher 1.3.0\n"
+"Report-Msgid-Bugs-To: https://github.com/osomstudio/osom-multi-theme-switcher\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Domain: osom-multi-theme-switcher\n"
+
+msgid "Main theme: %1$s. %2$d rule points selected content at a different theme."
+msgid_plural "Main theme: %1$s. %2$d rules point selected content at a different theme."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "%d theme rule cannot work"
+msgid_plural "%d theme rules cannot work"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "Theme updated for %d item."
+msgid_plural "Theme updated for %d items."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: includes/class-omts-acf-admin.php
+msgid "Theme"
+msgstr ""
+
+#: includes/class-omts-acf-admin.php
+msgid "Database only"
+msgstr ""
+
+#: includes/class-omts-acf-admin.php
+msgid "Osom Multi Theme Switcher: field groups collide across themes"
+msgstr ""
+
+#: includes/class-omts-acf-admin.php
+msgid "These field group keys are defined in more than one theme. Only one definition is loaded, so fields from the other theme are silently ignored:"
+msgstr ""
+
+#: includes/class-omts-block-categories.php
+msgid "Blocks: %s"
+msgstr ""
+
+#: includes/class-omts-block-categories.php
+msgid "Blocks: shared by several themes"
+msgstr ""
+
+#: includes/class-omts-block-categories.php
+msgid "[Shared] "
+msgstr ""
+
+#: includes/class-omts-health.php
+msgid "the theme \"%s\" is not installed — the main theme is used instead"
+msgstr ""
+
+#: includes/class-omts-health.php
+msgid "the content it points to no longer exists"
+msgstr ""
+
+#: includes/class-omts-health.php
+msgid "the term it points to no longer exists"
+msgstr ""
+
+#: includes/class-omts-health.php
+msgid "%1$s — %2$s"
+msgstr ""
+
+#: includes/class-omts-health.php
+msgid "Remove these rules"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Osom Multi Theme Switcher"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Theme Switcher"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "How it works"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Your site runs on one main theme. Every rule below is an exception: it points a page, a post type, a term or an address at a different theme."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Rules are checked from top to bottom and the first one that matches wins. Drag rules to change that order."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Dashboard theme"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "The switcher in the top admin bar changes the theme your dashboard runs in — for you only. Visitors are never affected by it; they always get the main theme or the theme a rule points to."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Use it to reach the settings pages of a theme that is not active site-wide."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Address rules"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "An address rule can match the exact address only, or the address together with everything below it. \"With sub-pages\" means /promo also covers /promo/summer."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Not sure what a rule will do? Paste an address into \"Test an address\" and the answer comes back with the rule that matched."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "-- Select --"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Could not load the list. Please try again."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Could not load the items. Please try again."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "The rule could not be saved. Please try again."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "The rule could not be deleted. Please try again."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Choose what the rule applies to."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Choose the theme this rule should use."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Enter an address or slug."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Choose a content type."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Choose an item."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Rule added."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Rule deleted."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Rule updated."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Rule order saved."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Undo"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Save"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Cancel"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "No rules yet. The whole site uses the main theme."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Enter an address to test."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "No rule matches this address — it uses the main theme."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Matched rule %1$d: %2$s"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "this address only"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "with sub-pages"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Active"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Paused"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "REST prefix removed."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "REST prefix saved."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Rules that could not work have been removed."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Which page"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Drafts, scheduled and private pages can be selected too."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Which post"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Drafts, scheduled and private posts can be selected too."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Content type"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Which items"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Pick \"All\" to cover every item of this type, including its archive."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Taxonomy"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Which term"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Covers the term archive and every item assigned to that term."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Address or slug"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "How this plugin works"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Your whole site runs on the main theme. Each rule below is an exception for a page, a content type, a term or an address."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Rules are checked from top to bottom and the first match wins. Drag a rule to move it up or down."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "The theme switcher in the admin bar changes your dashboard view only — it never changes what visitors see."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "When you open a page in the editor, the sidebar panel \"Theme for this item\" tells you which theme it will render in."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Add a rule"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Applies to"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "-- Choose --"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "A page"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "A post"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "A custom post type"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "A category, tag or term"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "An address (URL or slug)"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Which item"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "e.g. /promo or promo"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "This address only"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "This address and everything below it"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "\"Everything below it\" means /promo also covers /promo/summer."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Theme to use"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "-- Choose a theme --"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Add rule"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Rules"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Checked from top to bottom — the first rule that matches wins. Drag a row to change the order."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Order"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Target"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Status"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Actions"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Test an address"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Paste any address from this site to see which theme it renders in and which rule decided that."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Check"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Advanced: REST API prefixes"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Only needed when two themes register REST routes that clash. A theme with its own prefix answers at /your-prefix/ instead of /wp-json/. Saving rebuilds the permalink rules."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "REST API prefix"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "e.g. wp-json-2"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "No slashes. Leave empty for the default (%1$s). With %2$s, endpoints answer at %3$s"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Save prefix"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Active prefixes"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Prefix"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Example"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "No custom prefixes. Every theme answers at /wp-json/."
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Delete"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Drag to reorder"
+msgstr ""
+
+#: includes/class-omts-admin-page.php
+msgid "Edit"
+msgstr ""
+
+#: includes/class-omts-post-columns.php
+msgid "Main theme"
+msgstr ""
+
+#: includes/class-omts-post-columns.php
+msgid "Assign theme: %s"
+msgstr ""
+
+#: includes/class-omts-post-columns.php
+msgid "Assign theme: main theme (removes rule)"
+msgstr ""
+
+#: includes/class-omts-post-columns.php
+msgid "All themes"
+msgstr ""
+
+#: includes/class-omts-post-columns.php
+msgid "Only items with a theme rule"
+msgstr ""
+
+#: includes/class-omts-editor-context.php
+msgid "This item is displayed in the %1$s theme (rule: %2$s)."
+msgstr ""
+
+#: includes/class-omts-editor-context.php
+msgid "This item is displayed in the main theme (%s). No rule applies to it."
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "Dashboard: %s"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "Theme used by your dashboard view"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "Applies to your dashboard only, never to visitors."
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "main theme"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "Back to the main theme"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "Manage theme rules"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "Theme: %s"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "Rule %1$d: %2$s"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "No rule matched — main theme"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "stylesheet: %s"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "parent template: %s"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "matched %s"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "by URL, before the query"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "by the WordPress query"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "preview request"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "editor context"
+msgstr ""
+
+#: includes/class-omts-admin-bar.php
+msgid "Could not switch the dashboard theme. Please try again."
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Insufficient permissions"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Please select a theme"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Please select or enter a valid value"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Rule %1$d already covers this target and points it at %2$s. Edit that rule instead of adding a second one."
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Heads up: rule %1$d already covers this whole content type and points it at %2$s. Because the first match wins, move the new rule above it to make it count."
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Heads up: rule %1$d covers \"%2$s\" and everything below it, so it matches this address first."
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Draft"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Pending"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Private"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Scheduled"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "All %s"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "All"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Rule not found"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "Theme does not exist"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "An error occurred: "
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "REST prefix mapping not found"
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "The rule list changed in the meantime. Reload the page and try again."
+msgstr ""
+
+#: includes/class-omts-ajax-handler.php
+msgid "There is nothing to restore."
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Page (ID: %d)"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Post (ID: %d)"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Category"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Tag"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Term"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Item (ID: %d)"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Draft (ID: %d)"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Pending (ID: %d)"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Private (ID: %d)"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Unknown Scheduled (ID: %d)"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "%1$s → %2$s"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Page"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Post"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Custom Post Type"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Custom URL"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Category"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "Tag"
+msgstr ""
+
+#: includes/class-omts-theme-switcher.php
+msgid "CPT Item"
+msgstr ""
+
+#: assets/editor-panel.js
+msgid "Switch editor to %s"
+msgstr ""
+
+#: assets/editor-panel.js
+msgid "This item is displayed in the %1$s theme, but the editor is running %2$s. Blocks and fields may differ from the frontend."
+msgstr ""
+
+#: assets/editor-panel.js
+msgid "Renders in"
+msgstr ""
+
+#: assets/editor-panel.js
+msgid "Set by rule: %s"
+msgstr ""
+
+#: assets/editor-panel.js
+msgid "No rule applies — this item uses the main theme."
+msgstr ""
+
+#: assets/editor-panel.js
+msgid "The editor is running %s, so the block list may not match the frontend."
+msgstr ""
+
+#: assets/editor-panel.js
+msgid "The editor is running the same theme, so the blocks and fields here match the frontend."
+msgstr ""
+
+#: assets/editor-panel.js
+msgid "Theme for this item"
+msgstr ""
+

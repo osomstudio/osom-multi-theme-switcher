@@ -3,7 +3,7 @@ Contributors: osomstudio, bartosznowak, tomziel, kamiljanq, rainkom
 Tags: multiple themes, theme switcher, theme per page, woocommerce theme, landing page theme, multi theme, conditional theme, theme rules
 Requires at least: 5.0
 Tested up to: 6.9
-Stable tag: 1.2.2
+Stable tag: 1.3.0
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -36,7 +36,11 @@ Instead of hacking theme conditionals into functions.php every time, we packaged
 * **Per-user admin theme** — each administrator can use their preferred dashboard theme independently
 * **Draft & scheduled support** — apply themes to unpublished content for preview and staging
 * **REST API support** — configure custom REST API prefixes per theme
-* **ACF compatible** — loads Advanced Custom Fields JSON from all active theme directories
+* **ACF compatible** — loads Advanced Custom Fields JSON from all active theme directories, groups blocks in the inserter by the theme they come from, and reports field groups that collide between themes
+* **See the theme everywhere** — a sidebar panel in the editor, a Theme column on the post lists, and the theme plus matching rule in the frontend admin bar
+* **Address tester** — paste any URL and get back the theme it renders in and the rule that decided it
+* **Rule order is priority** — drag rules to reorder them, edit or pause them, undo a deletion
+* **Conflict detection** — the plugin refuses duplicate rules and warns when an earlier rule already wins
 * **No code required** — set up everything through the WordPress admin panel
 
 = How it works =
@@ -105,6 +109,27 @@ If you find a bug or have a feature request, [let us know on GitHub](https://git
 
 == Changelog ==
 
+= 1.3.0 =
+* Added the editor sidebar panel "Theme for this item", with a warning and one-click fix when the dashboard runs a different theme than the item will use
+* The editor now opens an item in the theme its rule points to, so the blocks and fields you see match the frontend
+* Added a Theme column, a "with a rule" filter and a bulk "Assign theme" action on the post lists
+* The frontend admin bar now shows the theme, the matching rule and how the match was made
+* Added the address tester on the settings screen
+* Rule order is now visible and drag-and-drop sortable; rules can be edited and paused
+* Added conflict detection when saving a rule
+* Address rules can now match the exact address only; existing rules keep matching sub-paths
+* Fixed address rules being matched against the query string as well as the path
+* Broken rules (missing theme, deleted content) are reported and removable in one click; rules are dropped with their content
+* ACF blocks are grouped in the inserter by theme, with a shared category for blocks that exist in several themes
+* The ACF field group list shows the source theme and reports key collisions
+* Added a "How this plugin works" panel, contextual help and clearer field labels
+* Replaced browser alerts and confirmations with admin notices and an undo action
+* Added translation files and text domain loading; ships with a Polish translation
+* Fixed asset versioning, so browsers no longer serve stale CSS and JS after an update
+
+= 1.2.3 =
+* Added a guard against infinite pre_option recursion, fixing child theme setups
+
 = 1.2.2 =
 * Fix bug with object selectors
 
@@ -137,6 +162,9 @@ If you find a bug or have a feature request, [let us know on GitHub](https://git
 * Early theme switching via setup_theme hook for full compatibility
 
 == Upgrade Notice ==
+
+= 1.3.0 =
+Adds theme visibility across the admin (editor panel, post list column, frontend admin bar), an address tester, rule ordering, editing and pausing, and a Polish translation. Address rules created from now on match the exact address by default; rules created earlier keep their previous behaviour.
 
 = 1.0.0 =
 Initial release of Osom Multi Theme Switcher.

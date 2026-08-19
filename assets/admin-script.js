@@ -1,430 +1,610 @@
-jQuery(document).ready(function($) {
-    'use strict';
+/* global jQuery, omtsAjax */
+jQuery( document ).ready( function ( $ ) {
+	'use strict';
 
-    // Types that need a two-step object → item selection
-    const TWO_STEP_TYPES = ['custom_post_type', 'taxonomy'];
+	// Types that need a two-step object -> item selection.
+	var TWO_STEP_TYPES = [ 'custom_post_type', 'taxonomy' ];
 
-    // Types that directly load items (no intermediate object step)
-    const DIRECT_ITEM_TYPES = ['page', 'post'];
+	// Types that load items directly, with no intermediate step.
+	var DIRECT_ITEM_TYPES = [ 'page', 'post' ];
 
-    // Handle rule type change
-    $('#omts-rule-type').on('change', function() {
-        const ruleType = $(this).val();
+	var i18n = omtsAjax.i18n;
 
-        // Hide all rule-specific rows and reset selects
-        $('.omts-rule-row').hide();
-        $('#omts-rule-object').html('<option value="">' + omtsAjax.selectLabel + '</option>');
-        $('#omts-rule-item').html('<option value="">' + omtsAjax.selectLabel + '</option>');
-        $('#omts-rule-item-row').hide();
+	/**
+	 * Show a message in the page notice area instead of a browser alert.
+	 *
+	 * @param {string} type    One of success, error, warning, info.
+	 * @param {string} message Message text.
+	 * @param {Object} action  Optional { label, onClick } button.
+	 */
+	function notice( type, message, action ) {
+		var box = $( '<div class="notice notice-' + type + ' is-dismissible omts-notice"><p></p></div>' );
 
-        if (!ruleType) {
-            return;
-        }
+		box.find( 'p' ).text( message );
 
-        if (ruleType === 'url') {
-            $('#omts-url-row').show();
-            return;
-        }
+		if ( action ) {
+			var button = $( '<button type="button" class="button button-small omts-notice-action"></button>' )
+				.text( action.label )
+				.on( 'click', function () {
+					box.remove();
+					action.onClick();
+				} );
 
-        if (TWO_STEP_TYPES.indexOf(ruleType) !== -1) {
-            // Show object row and fetch objects via AJAX
-            $('#omts-rule-object-row').show();
-            loadRuleObjects(ruleType);
-            return;
-        }
+			box.find( 'p' ).append( ' ' ).append( button );
+		}
 
-        if (DIRECT_ITEM_TYPES.indexOf(ruleType) !== -1) {
-            // Directly load items (pages or posts)
-            $('#omts-rule-item-row').show();
-            loadRuleItems(ruleType, '');
-        }
-    });
+		box.append( '<button type="button" class="notice-dismiss"></button>' );
+		box.find( '.notice-dismiss' ).on( 'click', function () {
+			box.remove();
+		} );
 
-    // Handle object selection change (for custom_post_type / taxonomy)
-    $('#omts-rule-object').on('change', function() {
-        const objectType = $(this).val();
-        const ruleType = $('#omts-rule-type').val();
+		$( '#omts-notices' ).prepend( box );
 
-        $('#omts-rule-item').html('<option value="">' + omtsAjax.selectLabel + '</option>');
-        $('#omts-rule-item-row').hide();
+		if ( 'error' !== type ) {
+			window.setTimeout( function () {
+				box.fadeOut( 200, function () {
+					box.remove();
+				} );
+			}, 8000 );
+		}
+	}
 
-        if (!objectType) {
-            return;
-        }
+	/**
+	 * Send a request to admin-ajax with the plugin nonce.
+	 *
+	 * @param {string} action Action name without the omts_ prefix.
+	 * @param {Object} data   Payload.
+	 * @return {Object} jQuery promise.
+	 */
+	function request( action, data ) {
+		return $.ajax( {
+			url: omtsAjax.ajaxurl,
+			type: 'POST',
+			data: $.extend( { action: 'omts_' + action, nonce: omtsAjax.nonce }, data || {} )
+		} );
+	}
 
-        $('#omts-rule-item-row').show();
-        loadRuleItems(ruleType, objectType);
-    });
+	/**
+	 * Renumber rows after the list changes, so positions match the stored order.
+	 */
+	function renumberRows() {
+		$( '#omts-rules-tbody tr' ).not( '.omts-no-rules' ).each( function ( position ) {
+			var row = $( this );
 
-    function loadRuleObjects(ruleType) {
-        const spinner = $('#omts-object-spinner');
-        const select = $('#omts-rule-object');
+			row.attr( 'data-index', position );
+			row.find( '.omts-position' ).text( position + 1 );
+			row.find( '[data-index]' ).attr( 'data-index', position );
+		} );
+	}
 
-        spinner.addClass('is-active');
-        select.prop('disabled', true);
+	/**
+	 * Drop the "no rules yet" placeholder once a rule exists.
+	 */
+	function clearEmptyState() {
+		$( '#omts-rules-tbody .omts-no-rules' ).remove();
+	}
 
-        $.ajax({
-            url: omtsAjax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'omts_get_rule_objects',
-                nonce: omtsAjax.nonce,
-                rule_type: ruleType
-            },
-            success: function(response) {
-                if (response.success && response.data.objects) {
-                    const objects = response.data.objects;
-                    let html = '<option value="">' + omtsAjax.selectLabel + '</option>';
-                    objects.forEach(function(obj) {
-                        html += '<option value="' + escapeAttr(obj.value) + '">' + escapeHtml(obj.label) + '</option>';
-                    });
-                    select.html(html);
-                }
-            },
-            error: function() {
-                alert('Error loading objects. Please try again.');
-            },
-            complete: function() {
-                spinner.removeClass('is-active');
-                select.prop('disabled', false);
-            }
-        });
-    }
+	/**
+	 * Put the placeholder back when the last rule is gone.
+	 */
+	function restoreEmptyState() {
+		if ( 0 === $( '#omts-rules-tbody tr' ).not( '.omts-no-rules' ).length ) {
+			$( '#omts-rules-tbody' ).html(
+				$( '<tr class="omts-no-rules"><td colspan="6"></td></tr>' ).find( 'td' ).text( i18n.noRules ).end()
+			);
+		}
+	}
 
-    function loadRuleItems(ruleType, objectType) {
-        const spinner = $('#omts-item-spinner');
-        const select = $('#omts-rule-item');
+	// ---------------------------------------------------------------------
+	// Add rule form
+	// ---------------------------------------------------------------------
 
-        spinner.addClass('is-active');
-        select.prop('disabled', true);
+	$( '#omts-rule-type' ).on( 'change', function () {
+		var ruleType = $( this ).val();
+		var labels = omtsAjax.labels[ ruleType ] || {};
 
-        $.ajax({
-            url: omtsAjax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'omts_get_rule_items',
-                nonce: omtsAjax.nonce,
-                rule_type: ruleType,
-                object_type: objectType
-            },
-            success: function(response) {
-                if (response.success && response.data.items) {
-                    const items = response.data.items;
-                    let html = '<option value="">' + omtsAjax.selectLabel + '</option>';
-                    items.forEach(function(item) {
-                        html += '<option value="' + escapeAttr(item.value) + '">' + escapeHtml(item.label) + '</option>';
-                    });
-                    select.html(html);
-                }
-            },
-            error: function() {
-                alert('Error loading items. Please try again.');
-            },
-            complete: function() {
-                spinner.removeClass('is-active');
-                select.prop('disabled', false);
-            }
-        });
-    }
+		$( '.omts-rule-row' ).hide();
+		$( '#omts-rule-object' ).html( '<option value="">' + omtsAjax.selectLabel + '</option>' );
+		$( '#omts-rule-item' ).html( '<option value="">' + omtsAjax.selectLabel + '</option>' );
+		$( '#omts-item-help' ).text( labels.help || '' );
 
-    // Handle form submission
-    $('#omts-add-rule-form').on('submit', function(e) {
-        e.preventDefault();
+		if ( ! ruleType ) {
+			return;
+		}
 
-        const form = $(this);
-        const submitButton = form.find('button[type="submit"]');
-        const ruleType = $('#omts-rule-type').val();
+		if ( labels.object ) {
+			$( '#omts-rule-object-label' ).text( labels.object );
+		}
 
-        if (!ruleType) {
-            alert('Please select a rule type');
-            return;
-        }
+		if ( labels.item ) {
+			$( '#omts-rule-item-label' ).text( labels.item );
+		}
 
-        if (!$('#omts-theme-select').val()) {
-            alert('Please select a theme');
-            return;
-        }
+		if ( 'url' === ruleType ) {
+			$( '#omts-url-row' ).show();
+			return;
+		}
 
-        // Collect form data based on rule type
-        const formData = {
-            action: 'omts_save_rules',
-            nonce: omtsAjax.nonce,
-            rule_type: ruleType,
-            theme: $('#omts-theme-select').val()
-        };
+		if ( -1 !== TWO_STEP_TYPES.indexOf( ruleType ) ) {
+			$( '#omts-rule-object-row' ).show();
+			loadRuleObjects( ruleType );
+			return;
+		}
 
-        if (ruleType === 'url') {
-            formData.custom_url = $('#omts-url-input').val().trim();
-            if (!formData.custom_url) {
-                alert('Please enter a URL or slug');
-                return;
-            }
-        } else if (TWO_STEP_TYPES.indexOf(ruleType) !== -1) {
-            formData.object_type = $('#omts-rule-object').val();
-            formData.item_id = $('#omts-rule-item').val();
-            if (!formData.object_type) {
-                alert('Please select an object type');
-                return;
-            }
-            if (!formData.item_id) {
-                alert('Please select an item');
-                return;
-            }
-        } else if (DIRECT_ITEM_TYPES.indexOf(ruleType) !== -1) {
-            formData.item_id = $('#omts-rule-item').val();
-            if (!formData.item_id) {
-                alert('Please select an item');
-                return;
-            }
-        }
+		if ( -1 !== DIRECT_ITEM_TYPES.indexOf( ruleType ) ) {
+			$( '#omts-rule-item-row' ).show();
+			loadRuleItems( ruleType, '' );
+		}
+	} );
 
-        // Disable submit button
-        submitButton.prop('disabled', true).text('Adding...');
+	$( '#omts-rule-object' ).on( 'change', function () {
+		var objectType = $( this ).val();
+		var ruleType = $( '#omts-rule-type' ).val();
 
-        // Send AJAX request
-        $.ajax({
-            url: omtsAjax.ajaxurl,
-            type: 'POST',
-            data: formData,
-            success: function(response) {
-                if (response.success) {
-                    // Remove "no rules" message if it exists
-                    $('.omts-no-rules').remove();
+		$( '#omts-rule-item' ).html( '<option value="">' + omtsAjax.selectLabel + '</option>' );
+		$( '#omts-rule-item-row' ).hide();
 
-                    // Add new row to table
-                    const newRow = `
-                        <tr data-index="${response.data.index}">
-                            <td>${escapeHtml(response.data.type_display)}</td>
-                            <td>${escapeHtml(response.data.target_display)}</td>
-                            <td>${escapeHtml(response.data.theme_name)}</td>
-                            <td>
-                                <button class="button omts-delete-rule" data-index="${response.data.index}">Delete</button>
-                            </td>
-                        </tr>
-                    `;
-                    $('#omts-rules-tbody').append(newRow);
+		if ( ! objectType ) {
+			return;
+		}
 
-                    // Reset form
-                    form[0].reset();
-                    $('#omts-rule-type').trigger('change');
+		$( '#omts-rule-item-row' ).show();
+		loadRuleItems( ruleType, objectType );
+	} );
 
-                    // Show success message
-                    const successMsg = $('<span class="omts-success-message">Rule added successfully!</span>');
-                    submitButton.after(successMsg);
-                    setTimeout(function() {
-                        successMsg.remove();
-                    }, 2000);
-                } else {
-                    alert('Error: ' + response.data);
-                }
-            },
-            error: function() {
-                alert('An error occurred while saving the rule. Please try again.');
-            },
-            complete: function() {
-                submitButton.prop('disabled', false).text('Add Rule');
-            }
-        });
-    });
+	/**
+	 * Load the first level of a cascading selector.
+	 *
+	 * @param {string} ruleType Selected rule type.
+	 */
+	function loadRuleObjects( ruleType ) {
+		var spinner = $( '#omts-object-spinner' );
+		var select = $( '#omts-rule-object' );
 
-    // Handle delete button click
-    $(document).on('click', '.omts-delete-rule', function() {
-        if (!confirm('Are you sure you want to delete this rule?')) {
-            return;
-        }
+		spinner.addClass( 'is-active' );
+		select.prop( 'disabled', true );
 
-        const button = $(this);
-        const row = button.closest('tr');
-        const index = button.data('index');
+		request( 'get_rule_objects', { rule_type: ruleType } )
+			.done( function ( response ) {
+				if ( response.success && response.data.objects ) {
+					select.html( buildOptions( response.data.objects ) );
+				}
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorObjects );
+			} )
+			.always( function () {
+				spinner.removeClass( 'is-active' );
+				select.prop( 'disabled', false );
+			} );
+	}
 
-        button.prop('disabled', true).text('Deleting...');
+	/**
+	 * Load the second level of a cascading selector.
+	 *
+	 * @param {string} ruleType   Selected rule type.
+	 * @param {string} objectType Selected object type.
+	 */
+	function loadRuleItems( ruleType, objectType ) {
+		var spinner = $( '#omts-item-spinner' );
+		var select = $( '#omts-rule-item' );
 
-        $.ajax({
-            url: omtsAjax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'omts_delete_rule',
-                nonce: omtsAjax.nonce,
-                index: index
-            },
-            success: function(response) {
-                if (response.success) {
-                    row.fadeOut(300, function() {
-                        $(this).remove();
+		spinner.addClass( 'is-active' );
+		select.prop( 'disabled', true );
 
-                        // Update indices for remaining rows
-                        $('#omts-rules-tbody tr').each(function(newIndex) {
-                            $(this).attr('data-index', newIndex);
-                            $(this).find('.omts-delete-rule').attr('data-index', newIndex);
-                        });
+		request( 'get_rule_items', { rule_type: ruleType, object_type: objectType } )
+			.done( function ( response ) {
+				if ( response.success && response.data.items ) {
+					select.html( buildOptions( response.data.items ) );
+				}
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorItems );
+			} )
+			.always( function () {
+				spinner.removeClass( 'is-active' );
+				select.prop( 'disabled', false );
+			} );
+	}
 
-                        // Show "no rules" message if table is empty
-                        if ($('#omts-rules-tbody tr').length === 0) {
-                            $('#omts-rules-tbody').html('<tr class="omts-no-rules"><td colspan="4">No rules configured yet. Add your first rule above.</td></tr>');
-                        }
-                    });
-                } else {
-                    alert('Error: ' + response.data);
-                    button.prop('disabled', false).text('Delete');
-                }
-            },
-            error: function() {
-                alert('An error occurred while deleting the rule. Please try again.');
-                button.prop('disabled', false).text('Delete');
-            }
-        });
-    });
+	/**
+	 * Build option markup for a select.
+	 *
+	 * @param {Array} items Items with value and label.
+	 * @return {jQuery} Option elements.
+	 */
+	function buildOptions( items ) {
+		var options = $( '<select></select>' ).append(
+			$( '<option></option>' ).val( '' ).text( omtsAjax.selectLabel )
+		);
 
-    // Handle REST prefix form submission
-    $('#omts-add-prefix-form').on('submit', function(e) {
-        e.preventDefault();
+		items.forEach( function ( item ) {
+			options.append( $( '<option></option>' ).val( item.value ).text( item.label ) );
+		} );
 
-        const form = $(this);
-        const submitButton = form.find('button[type="submit"]');
-        const theme = $('#omts-prefix-theme-select').val();
-        const prefix = $('#omts-rest-prefix-input').val().trim();
+		return options.children();
+	}
 
-        if (!theme) {
-            alert('Please select a theme');
-            return;
-        }
+	$( '#omts-add-rule-form' ).on( 'submit', function ( event ) {
+		event.preventDefault();
 
-        // Disable submit button
-        submitButton.prop('disabled', true).text('Saving...');
+		var button = $( this ).find( 'button[type="submit"]' );
+		var ruleType = $( '#omts-rule-type' ).val();
+		var theme = $( '#omts-theme-select' ).val();
+		var payload = { rule_type: ruleType, theme: theme };
 
-        // Send AJAX request
-        $.ajax({
-            url: omtsAjax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'omts_save_rest_prefix',
-                nonce: omtsAjax.nonce,
-                theme: theme,
-                prefix: prefix
-            },
-            success: function(response) {
-                if (response.success) {
-                    // Rebuild the entire table with updated data
-                    rebuildPrefixTable(response.data.prefixes);
+		if ( ! ruleType ) {
+			notice( 'error', i18n.needType );
+			return;
+		}
 
-                    // Reset form
-                    form[0].reset();
+		if ( ! theme ) {
+			notice( 'error', i18n.needTheme );
+			return;
+		}
 
-                    // Show success message
-                    const successMsg = $('<span class="omts-success-message">REST prefix configured successfully!</span>');
-                    submitButton.after(successMsg);
-                    setTimeout(function() {
-                        successMsg.remove();
-                    }, 2000);
-                } else {
-                    alert('Error: ' + response.data);
-                }
-            },
-            error: function(xhr, status, error) {
-                console.log('AJAX Error:', xhr, status, error);
-                console.log('Response Text:', xhr.responseText);
-                alert('An error occurred while saving the REST prefix. Check console for details.');
-            },
-            complete: function() {
-                submitButton.prop('disabled', false).text('Set REST Prefix');
-            }
-        });
-    });
+		if ( 'url' === ruleType ) {
+			var url = $.trim( $( '#omts-url-input' ).val() );
 
-    // Function to rebuild prefix table
-    function rebuildPrefixTable(prefixes) {
-        const tbody = $('#omts-prefixes-tbody');
-        tbody.empty();
+			if ( ! url ) {
+				notice( 'error', i18n.needUrl );
+				return;
+			}
 
-        if (!prefixes || prefixes.length === 0) {
-            tbody.html('<tr class="omts-no-prefixes"><td colspan="4">No custom REST prefixes configured. All themes use the default wp-json prefix.</td></tr>');
-            return;
-        }
+			payload.custom_url = url;
+			payload.url_match = $( 'input[name="url_match"]:checked' ).val();
+		} else if ( -1 !== TWO_STEP_TYPES.indexOf( ruleType ) ) {
+			var objectType = $( '#omts-rule-object' ).val();
 
-        prefixes.forEach(function(mapping, index) {
-            const displayPrefix = mapping.prefix || 'wp-json';
-            const exampleUrl = window.location.origin + '/' + displayPrefix + '/namespace/endpoint';
+			if ( ! objectType ) {
+				notice( 'error', i18n.needObject );
+				return;
+			}
 
-            // Get theme name from the select option
-            const themeName = $('#omts-prefix-theme-select option[value="' + mapping.theme + '"]').text() || mapping.theme;
+			if ( ! $( '#omts-rule-item' ).val() ) {
+				notice( 'error', i18n.needItem );
+				return;
+			}
 
-            const row = `
-                <tr data-index="${index}">
-                    <td>${escapeHtml(themeName)}</td>
-                    <td><code>${escapeHtml(displayPrefix)}</code></td>
-                    <td><code>${escapeHtml(exampleUrl)}</code></td>
-                    <td>
-                        <button class="button omts-delete-prefix" data-index="${index}">Delete</button>
-                    </td>
-                </tr>
-            `;
-            tbody.append(row);
-        });
-    }
+			payload.object_type = objectType;
+			payload.item_id = $( '#omts-rule-item' ).val();
+		} else {
+			if ( ! $( '#omts-rule-item' ).val() ) {
+				notice( 'error', i18n.needItem );
+				return;
+			}
 
-    // Handle delete prefix button click
-    $(document).on('click', '.omts-delete-prefix', function() {
-        if (!confirm('Are you sure you want to delete this REST prefix mapping? The theme will revert to using the default wp-json prefix.')) {
-            return;
-        }
+			payload.item_id = $( '#omts-rule-item' ).val();
+		}
 
-        const button = $(this);
-        const row = button.closest('tr');
-        const index = button.data('index');
+		button.prop( 'disabled', true );
 
-        button.prop('disabled', true).text('Deleting...');
+		request( 'save_rules', payload )
+			.done( function ( response ) {
+				if ( ! response.success ) {
+					notice( 'error', response.data || i18n.errorSave );
+					return;
+				}
 
-        $.ajax({
-            url: omtsAjax.ajaxurl,
-            type: 'POST',
-            data: {
-                action: 'omts_delete_rest_prefix',
-                nonce: omtsAjax.nonce,
-                index: index
-            },
-            success: function(response) {
-                if (response.success) {
-                    row.fadeOut(300, function() {
-                        $(this).remove();
+				clearEmptyState();
+				$( '#omts-rules-tbody' ).append( response.data.row );
+				renumberRows();
+				notice( 'success', i18n.ruleAdded );
 
-                        // Update indices for remaining rows
-                        $('#omts-prefixes-tbody tr').each(function(newIndex) {
-                            $(this).attr('data-index', newIndex);
-                            $(this).find('.omts-delete-prefix').attr('data-index', newIndex);
-                        });
+				if ( response.data.warning ) {
+					notice( 'warning', response.data.warning );
+				}
 
-                        // Show "no prefixes" message if table is empty
-                        if ($('#omts-prefixes-tbody tr').length === 0) {
-                            $('#omts-prefixes-tbody').html('<tr class="omts-no-prefixes"><td colspan="4">No custom REST prefixes configured. All themes use the default wp-json prefix.</td></tr>');
-                        }
-                    });
-                } else {
-                    alert('Error: ' + response.data);
-                    button.prop('disabled', false).text('Delete');
-                }
-            },
-            error: function() {
-                alert('An error occurred while deleting the REST prefix mapping. Please try again.');
-                button.prop('disabled', false).text('Delete');
-            }
-        });
-    });
+				$( '#omts-add-rule-form' )[ 0 ].reset();
+				$( '.omts-rule-row' ).hide();
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorSave );
+			} )
+			.always( function () {
+				button.prop( 'disabled', false );
+			} );
+	} );
 
-    // Helper functions
-    function escapeHtml(text) {
-        if (typeof text !== 'string') { text = String(text); }
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, function(m) { return map[m]; });
-    }
+	// ---------------------------------------------------------------------
+	// Rules table: delete, undo, pause, edit, reorder
+	// ---------------------------------------------------------------------
 
-    function escapeAttr(text) {
-        if (typeof text !== 'string') { text = String(text); }
-        return text.replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-    }
-});
+	$( document ).on( 'click', '.omts-delete-rule', function () {
+		var row = $( this ).closest( 'tr' );
+
+		request( 'delete_rule', { index: row.data( 'index' ) } )
+			.done( function ( response ) {
+				if ( ! response.success ) {
+					notice( 'error', response.data || i18n.errorDelete );
+					return;
+				}
+
+				row.fadeOut( 200, function () {
+					row.remove();
+					renumberRows();
+					restoreEmptyState();
+				} );
+
+				notice( 'success', i18n.ruleDeleted, {
+					label: i18n.undo,
+					onClick: function () {
+						request( 'restore_rule', {} ).done( function () {
+							window.location.reload();
+						} );
+					}
+				} );
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorDelete );
+			} );
+	} );
+
+	$( document ).on( 'change', '.omts-toggle-rule', function () {
+		var checkbox = $( this );
+		var row = checkbox.closest( 'tr' );
+
+		request( 'toggle_rule', {
+			index: row.data( 'index' ),
+			enabled: checkbox.is( ':checked' ) ? '1' : '0'
+		} )
+			.done( function ( response ) {
+				if ( ! response.success ) {
+					notice( 'error', response.data || i18n.errorGeneric );
+					checkbox.prop( 'checked', ! checkbox.is( ':checked' ) );
+					return;
+				}
+
+				row.replaceWith( response.data.row );
+				renumberRows();
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorGeneric );
+			} );
+	} );
+
+	$( document ).on( 'click', '.omts-edit-rule', function () {
+		var row = $( this ).closest( 'tr' );
+
+		if ( row.hasClass( 'omts-editing' ) ) {
+			return;
+		}
+
+		row.addClass( 'omts-editing' );
+
+		var themeSelect = $( '<select class="omts-edit-theme"></select>' );
+
+		omtsAjax.themes.forEach( function ( theme ) {
+			themeSelect.append(
+				$( '<option></option>' ).val( theme.value ).text( theme.label )
+			);
+		} );
+
+		themeSelect.val( row.data( 'theme' ) );
+		row.find( '.omts-cell-theme' ).empty().append( themeSelect );
+
+		if ( 'url' === row.data( 'type' ) ) {
+			var input = $( '<input type="text" class="omts-edit-value regular-text">' ).val( row.data( 'value' ) );
+			var matchSelect = $( '<select class="omts-edit-match"></select>' )
+				.append( $( '<option value="exact"></option>' ).text( i18n.matchExact || 'exact' ) )
+				.append( $( '<option value="prefix"></option>' ).text( i18n.matchPrefix || 'prefix' ) );
+
+			matchSelect.val( row.data( 'match' ) );
+			row.find( '.omts-cell-target' ).empty().append( input ).append( ' ' ).append( matchSelect );
+		}
+
+		row.find( '.omts-cell-actions' ).empty()
+			.append( $( '<button class="button button-small button-primary omts-save-rule"></button>' ).text( i18n.save ) )
+			.append( ' ' )
+			.append( $( '<button class="button button-small omts-cancel-edit"></button>' ).text( i18n.cancel ) );
+	} );
+
+	$( document ).on( 'click', '.omts-cancel-edit', function () {
+		window.location.reload();
+	} );
+
+	$( document ).on( 'click', '.omts-save-rule', function () {
+		var row = $( this ).closest( 'tr' );
+		var payload = {
+			index: row.data( 'index' ),
+			theme: row.find( '.omts-edit-theme' ).val()
+		};
+
+		if ( 'url' === row.data( 'type' ) ) {
+			payload.value = row.find( '.omts-edit-value' ).val();
+			payload.match = row.find( '.omts-edit-match' ).val();
+		}
+
+		request( 'update_rule', payload )
+			.done( function ( response ) {
+				if ( ! response.success ) {
+					notice( 'error', response.data || i18n.errorGeneric );
+					return;
+				}
+
+				row.replaceWith( response.data.row );
+				renumberRows();
+				notice( 'success', i18n.ruleUpdated );
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorGeneric );
+			} );
+	} );
+
+	if ( $.fn.sortable ) {
+		$( '#omts-rules-tbody' ).sortable( {
+			handle: '.omts-drag-handle',
+			axis: 'y',
+			helper: function ( event, row ) {
+				// Lock cell widths so the dragged row keeps its shape.
+				row.children().each( function () {
+					$( this ).width( $( this ).width() );
+				} );
+
+				return row;
+			},
+			update: function () {
+				var order = $( '#omts-rules-tbody tr' ).not( '.omts-no-rules' ).map( function () {
+					return $( this ).data( 'index' );
+				} ).get();
+
+				request( 'reorder_rules', { order: order } )
+					.done( function ( response ) {
+						if ( ! response.success ) {
+							notice( 'error', response.data || i18n.errorGeneric );
+							return;
+						}
+
+						renumberRows();
+						notice( 'success', i18n.orderSaved );
+					} )
+					.fail( function () {
+						notice( 'error', i18n.errorGeneric );
+					} );
+			}
+		} );
+	}
+
+	// ---------------------------------------------------------------------
+	// Address tester
+	// ---------------------------------------------------------------------
+
+	$( '#omts-test-form' ).on( 'submit', function ( event ) {
+		event.preventDefault();
+
+		var url = $.trim( $( '#omts-test-url' ).val() );
+		var result = $( '#omts-test-result' );
+		var spinner = $( '#omts-test-spinner' );
+
+		if ( ! url ) {
+			notice( 'error', i18n.testEmpty );
+			return;
+		}
+
+		spinner.addClass( 'is-active' );
+		result.removeClass( 'is-visible' ).empty();
+
+		request( 'test_url', { url: url } )
+			.done( function ( response ) {
+				if ( ! response.success ) {
+					notice( 'error', response.data || i18n.errorGeneric );
+					return;
+				}
+
+				var data = response.data;
+				var heading = $( '<p class="omts-test-theme"></p>' ).text( data.themeName );
+				var detail = $( '<p class="omts-test-detail"></p>' ).text(
+					data.isDefault
+						? i18n.testDefault
+						: i18n.matchedRule.replace( '%1$d', data.position ).replace( '%2$s', data.rule )
+				);
+
+				result.append( heading ).append( detail ).addClass( 'is-visible' );
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorGeneric );
+			} )
+			.always( function () {
+				spinner.removeClass( 'is-active' );
+			} );
+	} );
+
+	// ---------------------------------------------------------------------
+	// Broken rule cleanup
+	// ---------------------------------------------------------------------
+
+	$( document ).on( 'click', '.omts-cleanup-rules', function () {
+		var button = $( this );
+
+		button.prop( 'disabled', true );
+
+		request( 'cleanup_rules', {} )
+			.done( function ( response ) {
+				if ( ! response.success ) {
+					notice( 'error', response.data || i18n.errorGeneric );
+					button.prop( 'disabled', false );
+					return;
+				}
+
+				notice( 'success', i18n.cleanupDone );
+				window.setTimeout( function () {
+					window.location.reload();
+				}, 600 );
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorGeneric );
+				button.prop( 'disabled', false );
+			} );
+	} );
+
+	// ---------------------------------------------------------------------
+	// REST prefixes (advanced)
+	// ---------------------------------------------------------------------
+
+	$( '#omts-add-prefix-form' ).on( 'submit', function ( event ) {
+		event.preventDefault();
+
+		var theme = $( '#omts-prefix-theme-select' ).val();
+		var button = $( this ).find( 'button[type="submit"]' );
+
+		if ( ! theme ) {
+			notice( 'error', i18n.needTheme );
+			return;
+		}
+
+		button.prop( 'disabled', true );
+
+		request( 'save_rest_prefix', {
+			theme: theme,
+			prefix: $.trim( $( '#omts-rest-prefix-input' ).val() )
+		} )
+			.done( function ( response ) {
+				if ( ! response.success ) {
+					notice( 'error', response.data || i18n.errorGeneric );
+					return;
+				}
+
+				notice( 'success', i18n.prefixSaved );
+				window.setTimeout( function () {
+					window.location.reload();
+				}, 600 );
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorGeneric );
+			} )
+			.always( function () {
+				button.prop( 'disabled', false );
+			} );
+	} );
+
+	$( document ).on( 'click', '.omts-delete-prefix', function () {
+		var row = $( this ).closest( 'tr' );
+
+		request( 'delete_rest_prefix', { index: row.data( 'index' ) } )
+			.done( function ( response ) {
+				if ( ! response.success ) {
+					notice( 'error', response.data || i18n.errorGeneric );
+					return;
+				}
+
+				row.fadeOut( 200, function () {
+					row.remove();
+				} );
+
+				notice( 'success', i18n.prefixDeleted );
+			} )
+			.fail( function () {
+				notice( 'error', i18n.errorGeneric );
+			} );
+	} );
+
+	// Remember whether the "how it works" panel is open.
+	var howto = document.getElementById( 'omts-howto' );
+
+	if ( howto && window.localStorage ) {
+		howto.open = 'closed' !== window.localStorage.getItem( 'omtsHowtoState' );
+		howto.addEventListener( 'toggle', function () {
+			window.localStorage.setItem( 'omtsHowtoState', howto.open ? 'open' : 'closed' );
+		} );
+	}
+} );

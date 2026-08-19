@@ -1,0 +1,44 @@
+.omts-editor-theme {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	margin: 0 0 4px;
+}
+
+.omts-editor-theme__label {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: #757575;
+}
+
+.omts-editor-theme__name {
+	font-size: 15px;
+}
+
+.omts-editor-source {
+	margin: 0 0 12px;
+	color: #757575;
+}
+
+.omts-editor-panel .components-notice {
+	margin: 0 0 12px;
+}
+
+.omts-editor-link {
+	display: inline-block;
+	margin-top: 4px;
+}
+
+.omts-editor-match {
+	display: flex;
+	gap: 6px;
+	margin: 0 0 12px;
+	color: #757575;
+}
+
+.omts-editor-match:before {
+	content: "✓";
+	color: #007017;
+	font-weight: 600;
+}
