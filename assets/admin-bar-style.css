@@ -58,3 +58,72 @@
         font-size: 20px;
     }
 }
+
+/* 1.3.0 — explanatory notes and a marker when the view is switched */
+
+/*
+ * Core pins submenu items with:
+ *   #wpadminbar .quicklinks .menupop.hover ul li .ab-item { height: 26px; white-space: nowrap }
+ * Anything allowed to wrap has to beat that selector, or the text overflows a
+ * 26px box and lands on top of the next item.
+ */
+#wpadminbar .quicklinks .menupop ul li.omts-adminbar-explainer .ab-item,
+#wpadminbar .quicklinks .menupop.hover ul li.omts-adminbar-explainer .ab-item,
+#wpadminbar.nojs .quicklinks .menupop:hover ul li.omts-adminbar-explainer .ab-item {
+	height: auto;
+	white-space: normal;
+	line-height: 1.5;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	max-width: 260px;
+}
+
+/* The caption is a sentence, not a choice — set it apart from the list below. */
+#wpadminbar .quicklinks .menupop ul.omts-adminbar-caption {
+	border-bottom: 1px solid rgba(240, 246, 252, 0.12);
+	margin-bottom: 4px;
+	padding-bottom: 2px;
+}
+
+/* A fixed gutter keeps every theme name on the same left edge, checked or not. */
+#wpadminbar .omts-theme-mark {
+	display: inline-block;
+	width: 16px;
+	color: #72aee6;
+}
+
+#wpadminbar .omts-current-theme .omts-theme-name {
+	font-weight: 600;
+	color: #f0f6fc;
+}
+
+#wpadminbar .omts-theme-tag {
+	margin-left: 6px;
+	font-size: 11px;
+	color: #a7aaad;
+}
+
+#wpadminbar .omts-theme-tag:before {
+	content: "·";
+	margin-right: 5px;
+}
+
+/* Actions sit in a secondary group; core paints it, we only align it with the
+   list above by matching the theme name indent. */
+#wpadminbar .quicklinks .menupop ul.ab-sub-secondary li .ab-item {
+	padding-left: 26px;
+}
+
+#wpadminbar .omts-adminbar-note {
+	display: block;
+	font-size: 11px;
+	color: #a7aaad;
+}
+
+#wpadminbar .omts-admin-bar-menu--switched > .ab-item {
+	box-shadow: inset 0 -3px 0 #f0b849;
+}
+
+#wpadminbar .omts-theme-reset > .ab-item {
+	font-weight: 600;
+}

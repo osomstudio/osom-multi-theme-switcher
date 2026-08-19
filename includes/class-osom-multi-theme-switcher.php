@@ -25,7 +25,7 @@ class Osom_Multi_Theme_Switcher {
 	 *
 	 * @var string
 	 */
-	const VERSION = '1.2.2';
+	const VERSION = OMTS_VERSION;
 
 	/**
 	 * Single instance of the class.
@@ -77,6 +77,41 @@ class Osom_Multi_Theme_Switcher {
 	public $status_sync;
 
 	/**
+	 * Editor context instance.
+	 *
+	 * @var OMTS_Editor_Context
+	 */
+	public $editor_context;
+
+	/**
+	 * Post list columns instance.
+	 *
+	 * @var OMTS_Post_Columns
+	 */
+	public $post_columns;
+
+	/**
+	 * Block categories instance.
+	 *
+	 * @var OMTS_Block_Categories
+	 */
+	public $block_categories;
+
+	/**
+	 * ACF admin instance.
+	 *
+	 * @var OMTS_ACF_Admin
+	 */
+	public $acf_admin;
+
+	/**
+	 * Rule health instance.
+	 *
+	 * @var OMTS_Health
+	 */
+	public $health;
+
+	/**
 	 * Get single instance.
 	 *
 	 * @since 1.0.0
@@ -112,6 +147,11 @@ class Osom_Multi_Theme_Switcher {
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-ajax-handler.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-acf-loader.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-status-sync.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-editor-context.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-post-columns.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-block-categories.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-acf-admin.php';
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-omts-health.php';
 	}
 
 	/**
@@ -129,10 +169,17 @@ class Osom_Multi_Theme_Switcher {
 		// Initialize status sync (automatically updates rules on post status changes).
 		$this->status_sync = new OMTS_Status_Sync( $this->theme_switcher );
 
+		// Group ACF blocks by the theme they come from (inserter, both areas).
+		$this->block_categories = new OMTS_Block_Categories();
+
 		// Initialize admin components.
 		if ( is_admin() ) {
-			$this->admin_page   = new OMTS_Admin_Page( $this->theme_switcher );
-			$this->ajax_handler = new OMTS_Ajax_Handler( $this->theme_switcher, $this->admin_page );
+			$this->admin_page     = new OMTS_Admin_Page( $this->theme_switcher );
+			$this->ajax_handler   = new OMTS_Ajax_Handler( $this->theme_switcher, $this->admin_page );
+			$this->editor_context = new OMTS_Editor_Context( $this->theme_switcher );
+			$this->post_columns   = new OMTS_Post_Columns( $this->theme_switcher );
+			$this->acf_admin      = new OMTS_ACF_Admin();
+			$this->health         = new OMTS_Health( $this->theme_switcher );
 		}
 
 		// Initialize admin bar (shown on both admin and frontend).

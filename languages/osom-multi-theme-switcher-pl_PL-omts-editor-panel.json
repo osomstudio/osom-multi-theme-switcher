@@ -1,0 +1,41 @@
+{
+ "translation-revision-date": "2026-08-19 00:00+0000",
+ "generator": "osom-multi-theme-switcher",
+ "domain": "messages",
+ "locale_data": {
+  "messages": {
+   "": {
+    "domain": "messages",
+    "lang": "pl_PL",
+    "plural-forms": "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);"
+   },
+   "Switch editor to %s": [
+    "Przełącz edytor na %s"
+   ],
+   "This item is displayed in the %1$s theme, but the editor is running %2$s. Blocks and fields may differ from the frontend.": [
+    "Ten element wyświetla się w motywie %1$s, a edytor działa na %2$s. Bloki i pola mogą różnić się od tego, co zobaczy odwiedzający."
+   ],
+   "Renders in": [
+    "Wyświetla się w"
+   ],
+   "Set by rule: %s": [
+    "Ustawione regułą: %s"
+   ],
+   "No rule applies — this item uses the main theme.": [
+    "Nie dotyczy go żadna reguła — ten element używa motywu głównego."
+   ],
+   "The editor is running %s, so the block list may not match the frontend.": [
+    "Edytor działa na motywie %s, więc lista bloków może nie odpowiadać temu, co jest na froncie."
+   ],
+   "The editor is running the same theme, so the blocks and fields here match the frontend.": [
+    "Edytor działa w tym samym motywie, więc bloki i pola są tu takie same jak na froncie."
+   ],
+   "Manage theme rules": [
+    "Zarządzaj regułami motywów"
+   ],
+   "Theme for this item": [
+    "Motyw tego elementu"
+   ]
+  }
+ }
+}

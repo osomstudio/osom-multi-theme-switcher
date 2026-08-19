@@ -53,6 +53,12 @@ class OMTS_Ajax_Handler {
 		add_action( 'wp_ajax_omts_delete_rest_prefix', array( $this, 'ajax_delete_rest_prefix' ) );
 		add_action( 'wp_ajax_omts_get_rule_objects', array( $this, 'ajax_get_rule_objects' ) );
 		add_action( 'wp_ajax_omts_get_rule_items', array( $this, 'ajax_get_rule_items' ) );
+		add_action( 'wp_ajax_omts_update_rule', array( $this, 'ajax_update_rule' ) );
+		add_action( 'wp_ajax_omts_toggle_rule', array( $this, 'ajax_toggle_rule' ) );
+		add_action( 'wp_ajax_omts_reorder_rules', array( $this, 'ajax_reorder_rules' ) );
+		add_action( 'wp_ajax_omts_restore_rule', array( $this, 'ajax_restore_rule' ) );
+		add_action( 'wp_ajax_omts_test_url', array( $this, 'ajax_test_url' ) );
+		add_action( 'wp_ajax_omts_cleanup_rules', array( $this, 'ajax_cleanup_rules' ) );
 	}
 
 	/**
@@ -81,21 +87,136 @@ class OMTS_Ajax_Handler {
 			wp_send_json_error( __( 'Please select or enter a valid value', 'osom-multi-theme-switcher' ) );
 		}
 
+		$rules    = $this->theme_switcher->get_rules();
+		$conflict = $this->find_conflict( $rule, $rules );
+
+		if ( ! empty( $conflict['error'] ) ) {
+			wp_send_json_error( $conflict['error'] );
+		}
+
 		// Add rule to existing rules.
-		$rules   = $this->theme_switcher->get_rules();
 		$rules[] = $rule;
 
 		$this->theme_switcher->save_rules( $rules );
 
 		wp_send_json_success(
 			array(
-				'rule'           => $rule,
-				'index'          => count( $rules ) - 1,
-				'target_display' => $this->get_rule_target_display( $rule ),
-				'type_display'   => $this->get_rule_type_display( $rule['type'] ),
-				'theme_name'     => $this->theme_switcher->get_theme_name( $theme ),
+				'index'   => count( $rules ) - 1,
+				'row'     => $this->render_row( count( $rules ) - 1, $rule ),
+				'warning' => isset( $conflict['warning'] ) ? $conflict['warning'] : '',
 			)
 		);
+	}
+
+	/**
+	 * Render one rules table row.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param int   $index Rule position.
+	 * @param array $rule  Rule data.
+	 * @return string Row markup.
+	 */
+	private function render_row( $index, $rule ) {
+		ob_start();
+		$this->admin_page->render_rule_row( $index, $rule );
+
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Look for rules that make a new rule pointless.
+	 *
+	 * An identical rule is refused outright; a broader rule placed earlier only
+	 * produces a warning, because order can be changed afterwards.
+	 *
+	 * @since 1.3.0
+	 *
+	 * @param array $rule  Rule about to be saved.
+	 * @param array $rules Existing rules.
+	 * @return array Array with optional 'error' and 'warning' keys.
+	 */
+	private function find_conflict( $rule, $rules ) {
+		$item_types = array(
+			'page',
+			'post',
+			'cpt_item',
+			'draft_page',
+			'draft_post',
+			'draft_cpt_item',
+			'pending_page',
+			'pending_post',
+			'pending_cpt_item',
+			'private_page',
+			'private_post',
+			'private_cpt_item',
+			'future_page',
+			'future_post',
+			'future_cpt_item',
+		);
+
+		foreach ( $rules as $index => $existing ) {
+			$same_taxonomy = ( ! isset( $rule['taxonomy'] ) && ! isset( $existing['taxonomy'] ) )
+				|| ( isset( $rule['taxonomy'], $existing['taxonomy'] ) && $rule['taxonomy'] === $existing['taxonomy'] );
+
+			if ( $existing['type'] === $rule['type'] && (string) $existing['value'] === (string) $rule['value'] && $same_taxonomy ) {
+				return array(
+					'error' => sprintf(
+						/* translators: 1: Rule position, 2: Theme name */
+						__( 'Rule %1$d already covers this target and points it at %2$s. Edit that rule instead of adding a second one.', 'osom-multi-theme-switcher' ),
+						$index + 1,
+						$this->theme_switcher->get_theme_name( $existing['theme'] )
+					),
+				);
+			}
+		}
+
+		// A "whole post type" rule placed earlier already catches this single item.
+		if ( in_array( $rule['type'], $item_types, true ) ) {
+			$post = get_post( absint( $rule['value'] ) );
+
+			if ( $post ) {
+				foreach ( $rules as $index => $existing ) {
+					if ( 'post_type' === $existing['type'] && $existing['value'] === $post->post_type ) {
+						return array(
+							'warning' => sprintf(
+								/* translators: 1: Rule position, 2: Theme name */
+								__( 'Heads up: rule %1$d already covers this whole content type and points it at %2$s. Because the first match wins, move the new rule above it to make it count.', 'osom-multi-theme-switcher' ),
+								$index + 1,
+								$this->theme_switcher->get_theme_name( $existing['theme'] )
+							),
+						);
+					}
+				}
+			}
+		}
+
+		// An earlier address rule that also matches sub-paths swallows this one.
+		if ( 'url' === $rule['type'] ) {
+			$path = trim( (string) $rule['value'], '/' );
+
+			foreach ( $rules as $index => $existing ) {
+				if ( 'url' !== $existing['type'] ) {
+					continue;
+				}
+
+				$existing_path = trim( (string) $existing['value'], '/' );
+				$existing_mode = isset( $existing['match'] ) ? $existing['match'] : 'prefix';
+
+				if ( 'exact' !== $existing_mode && '' !== $existing_path && 0 === strpos( $path, $existing_path . '/' ) ) {
+					return array(
+						'warning' => sprintf(
+							/* translators: 1: Rule position, 2: Address */
+							__( 'Heads up: rule %1$d covers "%2$s" and everything below it, so it matches this address first.', 'osom-multi-theme-switcher' ),
+							$index + 1,
+							$existing_path
+						),
+					);
+				}
+			}
+		}
+
+		return array();
 	}
 
 	/**
@@ -222,6 +343,8 @@ class OMTS_Ajax_Handler {
 
 			case 'url':
 				$rule['value'] = isset( $_POST['custom_url'] ) ? sanitize_text_field( wp_unslash( $_POST['custom_url'] ) ) : '';
+				$match         = isset( $_POST['url_match'] ) ? sanitize_text_field( wp_unslash( $_POST['url_match'] ) ) : 'exact';
+				$rule['match'] = 'prefix' === $match ? 'prefix' : 'exact';
 				break;
 
 			default:
@@ -440,13 +563,25 @@ class OMTS_Ajax_Handler {
 		$index = isset( $_POST['index'] ) ? intval( $_POST['index'] ) : -1;
 		$rules = $this->theme_switcher->get_rules();
 
-		if ( isset( $rules[ $index ] ) ) {
-			array_splice( $rules, $index, 1 );
-			$this->theme_switcher->save_rules( $rules );
-			wp_send_json_success();
-		} else {
+		if ( ! isset( $rules[ $index ] ) ) {
 			wp_send_json_error( __( 'Rule not found', 'osom-multi-theme-switcher' ) );
 		}
+
+		// Keep the rule around briefly so deleting can be undone, instead of
+		// guarding it with a confirmation dialog.
+		set_transient(
+			'omts_undo_' . get_current_user_id(),
+			array(
+				'index' => $index,
+				'rule'  => $rules[ $index ],
+			),
+			HOUR_IN_SECONDS
+		);
+
+		array_splice( $rules, $index, 1 );
+		$this->theme_switcher->save_rules( $rules );
+
+		wp_send_json_success( array( 'canUndo' => true ) );
 	}
 
 	/**
@@ -490,105 +625,7 @@ class OMTS_Ajax_Handler {
 	 * @return string Display name.
 	 */
 	private function get_rule_target_display( $rule ) {
-		switch ( $rule['type'] ) {
-			case 'page':
-				$page = get_post( $rule['value'] );
-				return $page ? $page->post_title : sprintf(
-					/* translators: %d: Page ID */
-					__( 'Unknown Page (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
-			case 'post':
-				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title : sprintf(
-					/* translators: %d: Post ID */
-					__( 'Unknown Post (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
-			case 'post_type':
-				$post_type_obj = get_post_type_object( $rule['value'] );
-				return $post_type_obj
-					? sprintf(
-						/* translators: %s: Post type label */
-						__( 'All %s', 'osom-multi-theme-switcher' ),
-						$post_type_obj->label
-					)
-					: $rule['value'];
-
-			case 'url':
-				return $rule['value'];
-
-			case 'category':
-				$category = get_category( $rule['value'] );
-				return $category ? $category->name : __( 'Unknown Category', 'osom-multi-theme-switcher' );
-
-			case 'tag':
-				$tag = get_tag( $rule['value'] );
-				return $tag ? $tag->name : __( 'Unknown Tag', 'osom-multi-theme-switcher' );
-
-			case 'taxonomy':
-				$taxonomy = isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : '';
-				$term     = get_term( $rule['value'], $taxonomy );
-				if ( $term && ! is_wp_error( $term ) ) {
-					$tax_obj   = get_taxonomy( $taxonomy );
-					$tax_label = $tax_obj ? $tax_obj->label : $taxonomy;
-					return $term->name . ' (' . $tax_label . ')';
-				}
-				return __( 'Unknown Term', 'osom-multi-theme-switcher' );
-
-			case 'cpt_item':
-				$post = get_post( $rule['value'] );
-				return $post ? $post->post_title : sprintf(
-					/* translators: %d: Post ID */
-					__( 'Unknown Item (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
-			case 'draft_page':
-			case 'draft_post':
-			case 'draft_cpt_item':
-				$post = get_post( $rule['value'] );
-				return $post ? '(Draft) ' . $post->post_title : sprintf(
-					/* translators: %d: Post ID */
-					__( 'Unknown Draft (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
-			case 'pending_page':
-			case 'pending_post':
-			case 'pending_cpt_item':
-				$post = get_post( $rule['value'] );
-				return $post ? '(Pending) ' . $post->post_title : sprintf(
-					/* translators: %d: Post ID */
-					__( 'Unknown Pending (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
-			case 'private_page':
-			case 'private_post':
-			case 'private_cpt_item':
-				$post = get_post( $rule['value'] );
-				return $post ? '(Private) ' . $post->post_title : sprintf(
-					/* translators: %d: Post ID */
-					__( 'Unknown Private (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
-			case 'future_page':
-			case 'future_post':
-			case 'future_cpt_item':
-				$post = get_post( $rule['value'] );
-				return $post ? '(Scheduled) ' . $post->post_title : sprintf(
-					/* translators: %d: Post ID */
-					__( 'Unknown Scheduled (ID: %d)', 'osom-multi-theme-switcher' ),
-					$rule['value']
-				);
-
-			default:
-				return $rule['value'];
-		}
+		return OMTS_Theme_Switcher::get_rule_target_display( $rule );
 	}
 
 	/**
@@ -695,5 +732,213 @@ class OMTS_Ajax_Handler {
 		} else {
 			wp_send_json_error( __( 'REST prefix mapping not found', 'osom-multi-theme-switcher' ) );
 		}
+	}
+
+	/**
+	 * AJAX handler: change the theme (and address settings) of an existing rule.
+	 *
+	 * @since 1.3.0
+	 */
+	public function ajax_update_rule() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$index = isset( $_POST['index'] ) ? intval( $_POST['index'] ) : -1;
+		$theme = isset( $_POST['theme'] ) ? sanitize_text_field( wp_unslash( $_POST['theme'] ) ) : '';
+		$rules = $this->theme_switcher->get_rules();
+
+		if ( ! isset( $rules[ $index ] ) ) {
+			wp_send_json_error( __( 'Rule not found', 'osom-multi-theme-switcher' ) );
+		}
+
+		if ( empty( $theme ) || ! wp_get_theme( $theme )->exists() ) {
+			wp_send_json_error( __( 'Theme does not exist', 'osom-multi-theme-switcher' ) );
+		}
+
+		$rules[ $index ]['theme'] = $theme;
+
+		if ( 'url' === $rules[ $index ]['type'] ) {
+			if ( isset( $_POST['value'] ) ) {
+				$value = sanitize_text_field( wp_unslash( $_POST['value'] ) );
+
+				if ( '' === trim( $value, '/' ) ) {
+					wp_send_json_error( __( 'Enter an address or slug.', 'osom-multi-theme-switcher' ) );
+				}
+
+				$rules[ $index ]['value'] = $value;
+			}
+
+			if ( isset( $_POST['match'] ) ) {
+				$match                    = sanitize_text_field( wp_unslash( $_POST['match'] ) );
+				$rules[ $index ]['match'] = 'prefix' === $match ? 'prefix' : 'exact';
+			}
+		}
+
+		$this->theme_switcher->save_rules( $rules );
+
+		wp_send_json_success(
+			array(
+				'index' => $index,
+				'row'   => $this->render_row( $index, $rules[ $index ] ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: pause or resume a rule without deleting it.
+	 *
+	 * @since 1.3.0
+	 */
+	public function ajax_toggle_rule() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$index   = isset( $_POST['index'] ) ? intval( $_POST['index'] ) : -1;
+		$enabled = isset( $_POST['enabled'] ) && '1' === $_POST['enabled'];
+		$rules   = $this->theme_switcher->get_rules();
+
+		if ( ! isset( $rules[ $index ] ) ) {
+			wp_send_json_error( __( 'Rule not found', 'osom-multi-theme-switcher' ) );
+		}
+
+		$rules[ $index ]['enabled'] = $enabled;
+
+		$this->theme_switcher->save_rules( $rules );
+
+		wp_send_json_success(
+			array(
+				'index'   => $index,
+				'enabled' => $enabled,
+				'row'     => $this->render_row( $index, $rules[ $index ] ),
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: save a new rule order.
+	 *
+	 * Order is priority — the first rule that matches wins.
+	 *
+	 * @since 1.3.0
+	 */
+	public function ajax_reorder_rules() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$order = isset( $_POST['order'] ) ? array_map( 'intval', (array) wp_unslash( $_POST['order'] ) ) : array();
+		$rules = $this->theme_switcher->get_rules();
+
+		if ( count( $order ) !== count( $rules ) ) {
+			wp_send_json_error( __( 'The rule list changed in the meantime. Reload the page and try again.', 'osom-multi-theme-switcher' ) );
+		}
+
+		$reordered = array();
+
+		foreach ( $order as $index ) {
+			if ( ! isset( $rules[ $index ] ) ) {
+				wp_send_json_error( __( 'The rule list changed in the meantime. Reload the page and try again.', 'osom-multi-theme-switcher' ) );
+			}
+
+			$reordered[] = $rules[ $index ];
+		}
+
+		$this->theme_switcher->save_rules( $reordered );
+
+		wp_send_json_success();
+	}
+
+	/**
+	 * AJAX handler: put back the rule that was just deleted.
+	 *
+	 * @since 1.3.0
+	 */
+	public function ajax_restore_rule() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$undo = get_transient( 'omts_undo_' . get_current_user_id() );
+
+		if ( ! is_array( $undo ) || empty( $undo['rule'] ) ) {
+			wp_send_json_error( __( 'There is nothing to restore.', 'osom-multi-theme-switcher' ) );
+		}
+
+		$rules = $this->theme_switcher->get_rules();
+		$index = min( absint( $undo['index'] ), count( $rules ) );
+
+		array_splice( $rules, $index, 0, array( $undo['rule'] ) );
+
+		$this->theme_switcher->save_rules( $rules );
+		delete_transient( 'omts_undo_' . get_current_user_id() );
+
+		wp_send_json_success( array( 'index' => $index ) );
+	}
+
+	/**
+	 * AJAX handler: work out which theme an address renders in.
+	 *
+	 * @since 1.3.0
+	 */
+	public function ajax_test_url() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$url = isset( $_POST['url'] ) ? esc_url_raw( wp_unslash( $_POST['url'] ) ) : '';
+
+		if ( '' === trim( $url ) ) {
+			wp_send_json_error( __( 'Enter an address to test.', 'osom-multi-theme-switcher' ) );
+		}
+
+		$result  = $this->theme_switcher->resolve_for_path( $url );
+		$default = $this->theme_switcher->get_site_default_theme();
+		$theme   = $result['theme'] ? $result['theme'] : $default;
+
+		wp_send_json_success(
+			array(
+				'theme'     => $theme,
+				'themeName' => $this->theme_switcher->get_theme_name( $theme ),
+				'isDefault' => ! $result['theme'],
+				'position'  => null === $result['index'] ? 0 : (int) $result['index'] + 1,
+				'rule'      => $result['rule'] ? OMTS_Theme_Switcher::describe_rule( $result['rule'] ) : '',
+				'path'      => $result['path'],
+			)
+		);
+	}
+
+	/**
+	 * AJAX handler: drop rules that can no longer work.
+	 *
+	 * @since 1.3.0
+	 */
+	public function ajax_cleanup_rules() {
+		check_ajax_referer( 'omts_nonce', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( __( 'Insufficient permissions', 'osom-multi-theme-switcher' ) );
+		}
+
+		$plugin = osom_multi_theme_switcher();
+
+		if ( ! $plugin->health ) {
+			wp_send_json_error( __( 'Something went wrong. Please try again.', 'osom-multi-theme-switcher' ) );
+		}
+
+		$removed = $plugin->health->remove_broken_rules();
+
+		wp_send_json_success( array( 'removed' => $removed ) );
 	}
 }

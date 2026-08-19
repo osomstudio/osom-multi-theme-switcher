@@ -1,3 +1,19 @@
+// Non-blocking message, so a failed switch never traps the admin bar behind a dialog.
+function omtsAdminBarError(message) {
+    var text = message || (typeof omtsAdminBar !== 'undefined' ? omtsAdminBar.error : 'Could not switch the dashboard theme.');
+    var box = document.createElement('div');
+
+    box.className = 'omts-adminbar-error';
+    box.textContent = text;
+    box.setAttribute('role', 'status');
+    box.style.cssText = 'position:fixed;top:40px;right:16px;z-index:100000;background:#8a2424;color:#fff;padding:10px 14px;border-radius:3px;font-size:13px;max-width:320px';
+
+    document.body.appendChild(box);
+    window.setTimeout(function () {
+        box.remove();
+    }, 6000);
+}
+
 // Global function for theme switching (dashboard only)
 function omtsAdminBarSwitchTheme(themeSlug, nonce) {
     // Use the global ajaxurl if available, otherwise use the localized one
@@ -17,11 +33,11 @@ function omtsAdminBarSwitchTheme(themeSlug, nonce) {
                 // Reload the page to apply the new theme
                 location.reload();
             } else {
-                alert('Error: ' + (response.data || 'Unknown error'));
+                omtsAdminBarError(response.data);
             }
         },
-        error: function(xhr, status, error) {
-            alert('An error occurred while switching themes. Please try again.');
+        error: function() {
+            omtsAdminBarError();
         }
     });
 }
